@@ -2,20 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-image: url('https://qxfieysdfa5grr7f.public.blob.vercel-storage.com/678a673a4f3a29508da20554-SV8OGxGryUQsWZ5qYnRXZYE7FVG7N0');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed; /* Ensures the background stays fixed while scrolling */
+  color: #ffffff; /* Text color for better contrast on dark backgrounds */
+  font-family: 'Roboto', sans-serif; /* Modern and clean font */
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scroll caused by background scaling */
+}
+
+main {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black for readability */
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+}
+
+a {
+  color: #1da1f2; /* Twitter blue for links */
+  text-decoration: none; /* Clean link styles */
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #ffffff;
+}
+
+button {
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+header, footer {
+  background-color: rgba(0, 0, 0, 0.85); /* Slightly darker background for nav and footer */
+  padding: 1rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1); /* Subtle border for distinction */
+}
+
+footer {
+  text-align: center;
+  color: #cccccc;
+  font-size: 0.9rem;
 }
