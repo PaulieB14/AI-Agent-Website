@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useLazyQuery } from '@apollo/client';
-import client from '../apolloClient';
-import { USER_QUERY } from '../queries';
+import client from '../apolloClient'; // Adjusted path to match your structure
+import { USER_QUERY } from '../queries'; // Ensure this path is correct
 
 export default function WalletQuery() {
   const [wallet, setWallet] = useState('');
@@ -21,7 +21,7 @@ export default function WalletQuery() {
       price?: string;
       marketCap?: string;
     };
-  }  
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +57,21 @@ export default function WalletQuery() {
           <ul>
             {data.user.agentKeys.map((key: AgentKey) => (
               <li key={key.id} className="mb-4">
-                <p><strong>ID:</strong> {key.id}</p>
-                <p><strong>Balance:</strong> {key.balance}</p>
-                <p><strong>Symbol:</strong> {key.agentKey.ans.symbol}</p>
-                <p><strong>Price:</strong> {key.agentKey.price}</p>
-                <p><strong>Market Cap:</strong> {key.agentKey.marketCap}</p>
+                <p>
+                  <strong>ID:</strong> {key.id}
+                </p>
+                <p>
+                  <strong>Balance:</strong> {key.balance}
+                </p>
+                <p>
+                  <strong>Symbol:</strong> {key.agentKey.ans.symbol}
+                </p>
+                <p>
+                  <strong>Price:</strong> {key.agentKey.price ?? 'N/A'}
+                </p>
+                <p>
+                  <strong>Market Cap:</strong> {key.agentKey.marketCap ?? 'N/A'}
+                </p>
               </li>
             ))}
           </ul>
