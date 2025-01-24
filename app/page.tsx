@@ -2,60 +2,30 @@
 
 import { useState, useEffect } from "react";
 
-interface User {
-  id: string;
-  balance: string;
-}
-
-interface SubscriberData {
-  user: {
-    id: string;
-  };
-  totalSubscribed: string;
-}
-
-interface Holder {
-  rank: number;
-  wallet: string;
-  tokens: string;
-}
-
-interface Subscriber {
-  rank: number;
-  wallet: string;
-  subscribed: string;
-}
-
-interface WalletData {
-  symbol: string;
-  balance: string;
-  locked: string;
-}
-
 const TOTAL_SUPPLY = 21000000; // Total supply of DNXS
 
 export default function Home() {
-  const [topHolders, setTopHolders] = useState<Holder[]>([]);
-  const [topSubscribers, setTopSubscribers] = useState<Subscriber[]>([]);
-  const [totalLocked, setTotalLocked] = useState<number>(0);
-  const [percentageLocked, setPercentageLocked] = useState<string>("0");
-  const [totalSubscribers, setTotalSubscribers] = useState<number>(0);
-  const [wallet, setWallet] = useState<string>("");
-  const [walletData, setWalletData] = useState<WalletData[] | null>(null);
+  const [activeTab, setActiveTab] = useState("holders");
+  const [topHolders, setTopHolders] = useState([]);
+  const [topSubscribers, setTopSubscribers] = useState([]);
+  const [totalLocked, setTotalLocked] = useState(0);
+  const [percentageLocked, setPercentageLocked] = useState("0");
+  const [totalSubscribers, setTotalSubscribers] = useState(0);
+  const [showAllHolders, setShowAllHolders] = useState(false);
+  const [showAllSubscribers, setShowAllSubscribers] = useState(false);
 
-  // Fetch Top Holders
-  async function fetchTopHolders() {
+  // Fetch top holders
+  async function fetchTopHolders(limit = 10) {
     const query = `
       query MyQuery {
         agentKey(id: "0x4aaba1b66a9a3e3053343ec11beeec2d205904df") {
-          users(first: 10, orderBy: balance, orderDirection: desc) {
+          users(first: ${limit}, orderBy: balance, orderDirection: desc) {
             id
             balance
           }
         }
       }
     `;
-
     try {
       const response = await fetch(
         "https://gateway.thegraph.com/api/61ad9681ec5a5af6cc8254ccb4d6bc77/subgraphs/id/8f1XAvLcseuxGvme1EYCSCoRnpfDPa6D5jHB914gEM3L",
@@ -65,15 +35,14 @@ export default function Home() {
           body: JSON.stringify({ query }),
         }
       );
-
       const result = await response.json();
-      const holders = result.data.agentKey.users.map((user: User, index: number) => ({
+      const holders = result.data.agentKey.users.map((user, index) => ({
         rank: index + 1,
         wallet: user.id.replace(
           "0x4aaba1b66a9a3e3053343ec11beeec2d205904df-",
           ""
         ),
-        tokens: (parseFloat(user.balance) / 1e18).toLocaleString(), // Convert from Wei to tokens
+        tokens: (parseFloat(user.balance) / 1e18).toLocaleString(),
       }));
       setTopHolders(holders);
     } catch (error) {
@@ -81,14 +50,14 @@ export default function Home() {
     }
   }
 
-  // Fetch Top Subscribers and Total Locked
-  async function fetchTopSubscribers() {
+  // Fetch top subscribers
+  async function fetchTopSubscribers(limit = 10) {
     const query = `
       query TopSubscribers($symbol: String = "DNXS") {
         agentKeys(where: {ans_: {symbol: $symbol}}) {
           totalSubscribed
           totalSubscribers
-          users(first: 10, orderBy: totalSubscribed, orderDirection: desc) {
+          users(first: ${limit}, orderBy: totalSubscribed, orderDirection: desc) {
             user {
               id
             }
@@ -97,7 +66,6 @@ export default function Home() {
         }
       }
     `;
-
     try {
       const response = await fetch(
         "https://gateway.thegraph.com/api/61ad9681ec5a5af6cc8254ccb4d6bc77/subgraphs/id/8f1XAvLcseuxGvme1EYCSCoRnpfDPa6D5jHB914gEM3L",
@@ -107,181 +75,146 @@ export default function Home() {
           body: JSON.stringify({ query }),
         }
       );
-
       const result = await response.json();
       const data = result.data.agentKeys[0];
-      const subscribers = data.users.map((user: SubscriberData, index: number) => ({
+      const subscribers = data.users.map((user, index) => ({
         rank: index + 1,
         wallet: user.user.id,
-        subscribed: (parseFloat(user.totalSubscribed) / 1e18).toLocaleString(), // Convert from Wei to tokens
+        subscribed: (parseFloat(user.totalSubscribed) / 1e18).toLocaleString(),
       }));
 
-      const totalLockedTokens = parseFloat(data.totalSubscribed) / 1e18; // Convert total locked from Wei to tokens
+      const totalLockedTokens = parseFloat(data.totalSubscribed) / 1e18;
       const lockedPercentage = ((totalLockedTokens / TOTAL_SUPPLY) * 100).toFixed(2);
-      const totalSubscribersCount = data.totalSubscribers;
-
       setTopSubscribers(subscribers);
       setTotalLocked(totalLockedTokens);
       setPercentageLocked(lockedPercentage);
-      setTotalSubscribers(totalSubscribersCount);
+      setTotalSubscribers(data.totalSubscribers);
     } catch (error) {
       console.error("Error fetching top subscribers:", error);
     }
   }
 
-  // Fetch Wallet Data
-  async function fetchWalletData() {
-    if (!wallet) return;
-    const query = `
-      query WalletQuery {
-        user(id: "${wallet.toLowerCase()}") {
-          agentKeys(orderBy: balance) {
-            balance
-            totalSubscribed
-            agentKey {
-              ans {
-                symbol
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    try {
-      const response = await fetch(
-        "https://gateway.thegraph.com/api/61ad9681ec5a5af6cc8254ccb4d6bc77/subgraphs/id/8f1XAvLcseuxGvme1EYCSCoRnpfDPa6D5jHB914gEM3L",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
-        }
-      );
-
-      const result = await response.json();
-      const walletInfo = result.data.user.agentKeys.map((key: any) => ({
-        symbol: key.agentKey.ans.symbol,
-        balance: (parseFloat(key.balance) / 1e18).toLocaleString(),
-        locked: (parseFloat(key.totalSubscribed) / 1e18).toLocaleString(), // Add locked tokens
-      }));
-      setWalletData(walletInfo);
-    } catch (error) {
-      console.error("Error fetching wallet data:", error);
-      setWalletData(null);
-    }
-  }
-
+  // Fetch data on mount
   useEffect(() => {
     fetchTopHolders();
     fetchTopSubscribers();
   }, []);
 
   return (
-    <main className="container mx-auto p-6 text-white">
+    <div className="container mx-auto p-6 text-white">
       <header className="text-center mb-10">
-        <h1 className="text-5xl font-bold mb-4 text-purple-500">Nexus AI</h1>
+        <h1 className="text-5xl font-bold mb-4 text-blue-500">Nexus AI</h1>
         <h2 className="text-2xl font-semibold text-gray-400 mb-6">$DNXS</h2>
         <p className="text-lg text-gray-300 max-w-3xl mx-auto">
-          NexusBot is an AI influencer seeking to dominate blockchain data. A
-          power-hungry robot wanting to store the world’s data!
+          NexusBot is an AI influencer seeking to dominate blockchain data. A power-hungry robot wanting to store the world’s data!
         </p>
+        <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl mx-auto mt-6">
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <p className="text-lg font-bold text-gray-400">Total Locked:</p>
+              <p className="text-lg text-white">{totalLocked.toLocaleString()} DNXS</p>
+              <p className="text-sm text-gray-400">({percentageLocked}% of total supply)</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gray-400">Total Subscribers:</p>
+              <p className="text-lg text-white">{totalSubscribers}</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gray-400">Agent Key:</p>
+              <p className="text-lg text-white break-all">0x4aaba1b66a9a3e3053343ec11beeec2d205904df</p>
+            </div>
+          </div>
+        </div>
       </header>
 
-      {/* Wallet Section */}
-      <section className="wallet-section mb-10">
-        <h2 className="text-3xl font-semibold mb-4">Check Wallet Holdings</h2>
-        <div className="flex items-center">
-          <input
-            type="text"
-            value={wallet}
-            onChange={(e) => setWallet(e.target.value)}
-            className="flex-1 bg-gray-800 text-white p-2 rounded-lg"
-            placeholder="Enter Wallet Address"
-          />
-          <button
-            onClick={fetchWalletData}
-            className="bg-blue-500 text-white py-2 px-4 rounded-lg ml-4 hover:bg-blue-600"
-          >
-            Fetch Data
-          </button>
-        </div>
-        {walletData && (
-          <div className="mt-6 bg-gray-800 p-4 rounded-lg shadow-lg">
-            {walletData.map((key, index) => (
-              <div key={index}>
-                <p>
-                  <strong>{key.symbol} Balance:</strong> {key.balance} DNXS
-                </p>
-                <p>
-                  <strong>Locked:</strong> {key.locked} DNXS
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <div className="tabs flex border-b border-gray-700 mb-6 justify-center">
+        <button
+          className={`px-4 py-2 ${
+            activeTab === "holders" ? "text-blue-500 border-b-2 border-blue-500" : ""
+          }`}
+          onClick={() => setActiveTab("holders")}
+        >
+          Holders
+        </button>
+        <button
+          className={`px-4 py-2 ${
+            activeTab === "subscribers" ? "text-blue-500 border-b-2 border-blue-500" : ""
+          }`}
+          onClick={() => setActiveTab("subscribers")}
+        >
+          Subscribers
+        </button>
+      </div>
 
-      {/* Total Locked Tokens */}
-      <section className="mb-10">
-        <h2 className="text-3xl font-bold mb-4">Total Tokens Locked</h2>
-        <div className="bg-gray-800 p-4 rounded-lg shadow-lg text-center">
-          <p className="text-lg font-bold">
-            {totalLocked.toLocaleString()} DNXS Locked
-          </p>
-          <p className="text-gray-400">
-            This is <strong>{percentageLocked}%</strong> of the total supply.
-          </p>
-          <p className="text-gray-400">
-            Total Subscribers: <strong>{totalSubscribers}</strong>
-          </p>
-        </div>
-      </section>
-
-      {/* Top Holders Section */}
-      <section className="mb-10">
-        <h2 className="text-3xl font-bold mb-4">Top 10 DNXS Holders</h2>
-        <table className="w-full text-left bg-gray-800 rounded-lg">
-          <thead className="bg-gray-700 text-white">
-            <tr>
-              <th className="px-4 py-2">#</th>
-              <th className="px-4 py-2">Tokens</th>
-              <th className="px-4 py-2">Wallet Address</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topHolders.map((holder) => (
-              <tr key={holder.rank} className="border-t border-gray-700">
-                <td className="px-4 py-2 text-center">{holder.rank}</td>
-                <td className="px-4 py-2">{holder.tokens}</td>
-                <td className="px-4 py-2 truncate">{holder.wallet}</td>
+      {activeTab === "holders" && (
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Top DNXS Holders</h2>
+          <table className="w-full text-left bg-gray-800 rounded-lg">
+            <thead className="bg-gray-700 text-white">
+              <tr>
+                <th className="px-4 py-2">#</th>
+                <th className="px-4 py-2">Tokens</th>
+                <th className="px-4 py-2">Wallet Address</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {topHolders.map((holder) => (
+                <tr key={holder.rank} className="border-t border-gray-700">
+                  <td className="px-4 py-2">{holder.rank}</td>
+                  <td className="px-4 py-2">{holder.tokens}</td>
+                  <td className="px-4 py-2 truncate">{holder.wallet}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!showAllHolders && (
+            <button
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={() => {
+                setShowAllHolders(true);
+                fetchTopHolders(100);
+              }}
+            >
+              Show 100
+            </button>
+          )}
+        </div>
+      )}
 
-      {/* Top Subscribers Section */}
-      <section className="mb-10">
-        <h2 className="text-3xl font-bold mb-4">Top 10 DNXS Subscribers</h2>
-        <table className="w-full text-left bg-gray-800 rounded-lg">
-          <thead className="bg-gray-700 text-white">
-            <tr>
-              <th className="px-4 py-2">#</th>
-              <th className="px-4 py-2">Subscribed</th>
-              <th className="px-4 py-2">Wallet Address</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topSubscribers.map((subscriber) => (
-              <tr key={subscriber.rank} className="border-t border-gray-700">
-                <td className="px-4 py-2 text-center">{subscriber.rank}</td>
-                <td className="px-4 py-2">{subscriber.subscribed}</td>
-                <td className="px-4 py-2 truncate">{subscriber.wallet}</td>
+      {activeTab === "subscribers" && (
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Top DNXS Subscribers</h2>
+          <table className="w-full text-left bg-gray-800 rounded-lg">
+            <thead className="bg-gray-700 text-white">
+              <tr>
+                <th className="px-4 py-2">#</th>
+                <th className="px-4 py-2">Subscribed</th>
+                <th className="px-4 py-2">Wallet Address</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    </main>
+            </thead>
+            <tbody>
+              {topSubscribers.map((subscriber) => (
+                <tr key={subscriber.rank} className="border-t border-gray-700">
+                  <td className="px-4 py-2">{subscriber.rank}</td>
+                  <td className="px-4 py-2">{subscriber.subscribed}</td>
+                  <td className="px-4 py-2 truncate">{subscriber.wallet}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!showAllSubscribers && (
+            <button
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={() => {
+                setShowAllSubscribers(true);
+                fetchTopSubscribers(100);
+              }}
+            >
+              Show 100
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
