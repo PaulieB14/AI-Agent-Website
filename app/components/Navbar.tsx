@@ -1,53 +1,21 @@
-import { FaTwitter, FaTelegramPlane, FaDiscord } from "react-icons/fa";
-import { BiLinkExternal } from "react-icons/bi";
+import './globals.css';
+import Navbar from './components/Navbar'; // Adjust the path if necessary
 
-export default function Navbar() {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <nav className="bg-black text-white py-4 px-6 fixed top-0 left-0 w-full shadow-lg z-50">
-      <div className="container mx-auto flex justify-between items-center">
-        {/* Logo or Title */}
-        <h1 className="text-2xl font-bold">Nexus AI</h1>
-
-        {/* Social Links */}
-        <div className="flex items-center space-x-4">
-          <a
-            href="https://x.com/DataNexusAgent"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-400 text-xl"
-            title="Twitter"
-          >
-            <FaTwitter />
-          </a>
-          <a
-            href="https://t.me/Nexusbotportal"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 text-xl"
-            title="Telegram"
-          >
-            <FaTelegramPlane />
-          </a>
-          <a
-            href="https://discord.gg/4fPQUtuJCq"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-indigo-500 hover:text-indigo-400 text-xl"
-            title="Discord"
-          >
-            <FaDiscord />
-          </a>
-          <a
-            href="https://creator.bid/agents/678a673a4f3a29508da20554"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-400 hover:text-gray-300 text-xl"
-            title="CreatorBid"
-          >
-            <BiLinkExternal />
-          </a>
-        </div>
-      </div>
-    </nav>
+    <html lang="en">
+      <head>
+        <title>Nexus AI</title>
+        <meta name="description" content="Nexus AI - The future of blockchain data" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body>
+        <Navbar /> {/* Add Navbar here */}
+        <main>{children}</main>
+        <footer className="bg-gray-800 text-center text-gray-400 py-4">
+          © 2025 Nexus AI. All rights reserved.
+        </footer>
+      </body>
+    </html>
   );
 }
