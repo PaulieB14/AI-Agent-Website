@@ -4,6 +4,25 @@ import { useState, useEffect, useCallback } from "react";
 
 const TOTAL_SUPPLY = 21000000; // Total supply of DNXS
 
+interface Holder {
+  rank: number;
+  wallet: string;
+  tokens: string;
+}
+
+interface Subscriber {
+  rank: number;
+  wallet: string;
+  subscribed: string;
+}
+
+interface SubscriberData {
+  user: {
+    id: string;
+  };
+  totalSubscribed: string;
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"holders" | "subscribers">("holders");
   const [topHolders, setTopHolders] = useState<Holder[]>([]);
@@ -11,28 +30,8 @@ export default function Home() {
   const [totalLocked, setTotalLocked] = useState<number>(0);
   const [percentageLocked, setPercentageLocked] = useState<string>("0");
   const [totalSubscribers, setTotalSubscribers] = useState<number>(0);
-  const [showAllHolders, setShowAllHolders] = useState<boolean>(false);
-  const [showAllSubscribers, setShowAllSubscribers] = useState<boolean>(false);
 
-  interface Holder {
-    rank: number;
-    wallet: string;
-    tokens: string;
-  }
-
-  interface Subscriber {
-    rank: number;
-    wallet: string;
-    subscribed: string;
-  }
-
-  interface SubscriberData {
-    user: {
-      id: string;
-    };
-    totalSubscribed: string;
-  }
-
+  // Fetch top holders
   const fetchTopHolders = useCallback(async (limit = 10) => {
     const query = `
       query MyQuery {
@@ -55,20 +54,23 @@ export default function Home() {
         }
       );
       const result = await response.json();
-      const holders = result.data.agentKey.users.map((user: { id: string; balance: string }, index: number) => ({
-        rank: index + 1,
-        wallet: user.id.replace(
-          "0x4aaba1b66a9a3e3053343ec11beeec2d205904df-",
-          ""
-        ),
-        tokens: (parseFloat(user.balance) / 1e18).toLocaleString(),
-      }));
+      const holders = result.data.agentKey.users.map(
+        (user: { id: string; balance: string }, index: number) => ({
+          rank: index + 1,
+          wallet: user.id.replace(
+            "0x4aaba1b66a9a3e3053343ec11beeec2d205904df-",
+            ""
+          ),
+          tokens: (parseFloat(user.balance) / 1e18).toLocaleString(),
+        })
+      );
       setTopHolders(holders);
     } catch (error) {
       console.error("Error fetching top holders:", error);
     }
   }, []);
 
+  // Fetch top subscribers
   const fetchTopSubscribers = useCallback(async (limit = 10) => {
     const query = `
       query TopSubscribers($symbol: String = "DNXS") {
@@ -112,16 +114,11 @@ export default function Home() {
     }
   }, []);
 
-  // Placeholder useEffect to satisfy ESLint warnings
-  useEffect(() => {
-    console.log(topHolders, topSubscribers, showAllHolders, showAllSubscribers);
-  }, [topHolders, topSubscribers, showAllHolders, showAllSubscribers]);
-
   // Fetch data on mount
   useEffect(() => {
     fetchTopHolders();
     fetchTopSubscribers();
-  }, []);
+  }, [fetchTopHolders, fetchTopSubscribers]);
 
   return (
     <div className="container mx-auto p-6 text-white">
@@ -176,7 +173,22 @@ export default function Home() {
         <div>
           <h2 className="text-2xl font-semibold mb-4">Top DNXS Holders</h2>
           <table className="w-full text-left bg-gray-800 rounded-lg">
-            {/* Table Content */}
+            <thead className="bg-gray-700 text-white">
+              <tr>
+                <th className="px-4 py-2">#</th>
+                <th className="px-4 py-2">Tokens</th>
+                <th className="px-4 py-2">Wallet Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topHolders.map((holder) => (
+                <tr key={holder.rank} className="border-t border-gray-700">
+                  <td className="px-4 py-2">{holder.rank}</td>
+                  <td className="px-4 py-2">{holder.tokens}</td>
+                  <td className="px-4 py-2 truncate">{holder.wallet}</td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       )}
@@ -185,7 +197,22 @@ export default function Home() {
         <div>
           <h2 className="text-2xl font-semibold mb-4">Top DNXS Subscribers</h2>
           <table className="w-full text-left bg-gray-800 rounded-lg">
-            {/* Table Content */}
+            <thead className="bg-gray-700 text-white">
+              <tr>
+                <th className="px-4 py-2">#</th>
+                <th className="px-4 py-2">Subscribed</th>
+                <th className="px-4 py-2">Wallet Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topSubscribers.map((subscriber) => (
+                <tr key={subscriber.rank} className="border-t border-gray-700">
+                  <td className="px-4 py-2">{subscriber.rank}</td>
+                  <td className="px-4 py-2">{subscriber.subscribed}</td>
+                  <td className="px-4 py-2 truncate">{subscriber.wallet}</td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       )}
