@@ -14,6 +14,12 @@ export default function Home() {
   const [showAllHolders, setShowAllHolders] = useState(false);
   const [showAllSubscribers, setShowAllSubscribers] = useState(false);
 
+  interface User {
+    id: string;
+    balance: string;
+  }
+  
+
   // Fetch top holders
   async function fetchTopHolders(limit = 10) {
     const query = `
@@ -36,7 +42,7 @@ export default function Home() {
         }
       );
       const result = await response.json();
-      const holders = result.data.agentKey.users.map((user, index) => ({
+      const holders = result.data.agentKey.users.map((user: User, index: number) => ({
         rank: index + 1,
         wallet: user.id.replace(
           "0x4aaba1b66a9a3e3053343ec11beeec2d205904df-",
