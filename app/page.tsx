@@ -2,16 +2,46 @@
 
 import { useState, useEffect } from "react";
 
+interface User {
+  id: string;
+  balance: string;
+}
+
+interface SubscriberData {
+  user: {
+    id: string;
+  };
+  totalSubscribed: string;
+}
+
+interface Holder {
+  rank: number;
+  wallet: string;
+  tokens: string;
+}
+
+interface Subscriber {
+  rank: number;
+  wallet: string;
+  subscribed: string;
+}
+
+interface WalletData {
+  symbol: string;
+  balance: string;
+  locked: string;
+}
+
 const TOTAL_SUPPLY = 21000000; // Total supply of DNXS
 
 export default function Home() {
-  const [topHolders, setTopHolders] = useState([]);
-  const [topSubscribers, setTopSubscribers] = useState([]);
-  const [totalLocked, setTotalLocked] = useState(0);
-  const [percentageLocked, setPercentageLocked] = useState(0);
-  const [totalSubscribers, setTotalSubscribers] = useState(0);
-  const [wallet, setWallet] = useState("");
-  const [walletData, setWalletData] = useState(null);
+  const [topHolders, setTopHolders] = useState<Holder[]>([]);
+  const [topSubscribers, setTopSubscribers] = useState<Subscriber[]>([]);
+  const [totalLocked, setTotalLocked] = useState<number>(0);
+  const [percentageLocked, setPercentageLocked] = useState<string>("0");
+  const [totalSubscribers, setTotalSubscribers] = useState<number>(0);
+  const [wallet, setWallet] = useState<string>("");
+  const [walletData, setWalletData] = useState<WalletData[] | null>(null);
 
   // Fetch Top Holders
   async function fetchTopHolders() {
@@ -37,7 +67,7 @@ export default function Home() {
       );
 
       const result = await response.json();
-      const holders = result.data.agentKey.users.map((user, index) => ({
+      const holders = result.data.agentKey.users.map((user: User, index: number) => ({
         rank: index + 1,
         wallet: user.id.replace(
           "0x4aaba1b66a9a3e3053343ec11beeec2d205904df-",
@@ -80,7 +110,7 @@ export default function Home() {
 
       const result = await response.json();
       const data = result.data.agentKeys[0];
-      const subscribers = data.users.map((user, index) => ({
+      const subscribers = data.users.map((user: SubscriberData, index: number) => ({
         rank: index + 1,
         wallet: user.user.id,
         subscribed: (parseFloat(user.totalSubscribed) / 1e18).toLocaleString(), // Convert from Wei to tokens
@@ -129,7 +159,7 @@ export default function Home() {
       );
 
       const result = await response.json();
-      const walletInfo = result.data.user.agentKeys.map((key) => ({
+      const walletInfo = result.data.user.agentKeys.map((key: any) => ({
         symbol: key.agentKey.ans.symbol,
         balance: (parseFloat(key.balance) / 1e18).toLocaleString(),
         locked: (parseFloat(key.totalSubscribed) / 1e18).toLocaleString(), // Add locked tokens
