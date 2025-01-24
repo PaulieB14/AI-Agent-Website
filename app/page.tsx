@@ -19,6 +19,13 @@ export default function Home() {
     balance: string;
   }
   
+  interface SubscriberData {
+    user: {
+      id: string;
+    };
+    totalSubscribed: string;
+  }
+  
 
   // Fetch top holders
   async function fetchTopHolders(limit = 10) {
@@ -83,7 +90,7 @@ export default function Home() {
       );
       const result = await response.json();
       const data = result.data.agentKeys[0];
-      const subscribers = data.users.map((user, index) => ({
+      const subscribers = data.users.map((user: SubscriberData, index: number) => ({
         rank: index + 1,
         wallet: user.user.id,
         subscribed: (parseFloat(user.totalSubscribed) / 1e18).toLocaleString(),
