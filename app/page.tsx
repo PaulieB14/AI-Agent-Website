@@ -30,8 +30,9 @@ export default function Home() {
   const [totalLocked, setTotalLocked] = useState<number>(0);
   const [percentageLocked, setPercentageLocked] = useState<string>("0");
   const [totalSubscribers, setTotalSubscribers] = useState<number>(0);
+  const [showAllHolders, setShowAllHolders] = useState<boolean>(false);
+  const [showAllSubscribers, setShowAllSubscribers] = useState<boolean>(false);
 
-  // Fetch top holders
   const fetchTopHolders = useCallback(async (limit = 10) => {
     const query = `
       query MyQuery {
@@ -70,7 +71,6 @@ export default function Home() {
     }
   }, []);
 
-  // Fetch top subscribers
   const fetchTopSubscribers = useCallback(async (limit = 10) => {
     const query = `
       query TopSubscribers($symbol: String = "DNXS") {
@@ -114,7 +114,6 @@ export default function Home() {
     }
   }, []);
 
-  // Fetch data on mount
   useEffect(() => {
     fetchTopHolders();
     fetchTopSubscribers();
@@ -190,6 +189,17 @@ export default function Home() {
               ))}
             </tbody>
           </table>
+          {!showAllHolders && (
+            <button
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={() => {
+                setShowAllHolders(true);
+                fetchTopHolders(100);
+              }}
+            >
+              Show 100
+            </button>
+          )}
         </div>
       )}
 
@@ -214,6 +224,17 @@ export default function Home() {
               ))}
             </tbody>
           </table>
+          {!showAllSubscribers && (
+            <button
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={() => {
+                setShowAllSubscribers(true);
+                fetchTopSubscribers(100);
+              }}
+            >
+              Show 100
+            </button>
+          )}
         </div>
       )}
     </div>
