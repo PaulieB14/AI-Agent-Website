@@ -11,6 +11,18 @@ export default function WalletQuery() {
     client,
   });
 
+  interface AgentKey {
+    id: string;
+    balance: string;
+    agentKey: {
+      ans: {
+        symbol: string;
+      };
+      price?: string;
+      marketCap?: string;
+    };
+  }  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (wallet) {
@@ -43,7 +55,7 @@ export default function WalletQuery() {
         <div className="mt-6">
           <h2 className="text-xl font-semibold">Agent Keys</h2>
           <ul>
-            {data.user.agentKeys.map((key: any) => (
+            {data.user.agentKeys.map((key: AgentKey) => (
               <li key={key.id} className="mb-4">
                 <p><strong>ID:</strong> {key.id}</p>
                 <p><strong>Balance:</strong> {key.balance}</p>
