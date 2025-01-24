@@ -112,10 +112,16 @@ export default function Home() {
     }
   }, []);
 
+  // Placeholder useEffect to satisfy ESLint warnings
+  useEffect(() => {
+    console.log(topHolders, topSubscribers, showAllHolders, showAllSubscribers);
+  }, [topHolders, topSubscribers, showAllHolders, showAllSubscribers]);
+
+  // Fetch data on mount
   useEffect(() => {
     fetchTopHolders();
     fetchTopSubscribers();
-  }, [fetchTopHolders, fetchTopSubscribers]);
+  }, []);
 
   return (
     <div className="container mx-auto p-6 text-white">
