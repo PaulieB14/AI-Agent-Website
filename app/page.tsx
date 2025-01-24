@@ -14,10 +14,6 @@ export default function Home() {
   const [showAllHolders, setShowAllHolders] = useState(false);
   const [showAllSubscribers, setShowAllSubscribers] = useState(false);
 
-  interface User {
-    id: string;
-    balance: string;
-  }
   
   interface SubscriberData {
     user: {
@@ -29,6 +25,12 @@ export default function Home() {
     rank: number;
     wallet: string;
     tokens: string;
+  }
+  
+  interface Subscriber {
+    rank: number;
+    wallet: string;
+    subscribed: string;
   }
   
 
@@ -54,7 +56,7 @@ export default function Home() {
         }
       );
       const result = await response.json();
-      const holders = result.data.agentKey.users.map((user: any, index: number): Holder => ({
+      const holders = result.data.agentKey.users.map((user: { id: string; balance: string }, index: number): Holder => ({
         rank: index + 1,
         wallet: user.id.replace(
           "0x4aaba1b66a9a3e3053343ec11beeec2d205904df-",
