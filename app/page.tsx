@@ -6,7 +6,7 @@ const TOTAL_SUPPLY = 21000000; // Total supply of DNXS
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("holders");
-  const [topHolders, setTopHolders] = useState([]);
+  const [topHolders, setTopHolders] = useState<Holder[]>([]);
   const [topSubscribers, setTopSubscribers] = useState([]);
   const [totalLocked, setTotalLocked] = useState(0);
   const [percentageLocked, setPercentageLocked] = useState("0");
@@ -24,6 +24,11 @@ export default function Home() {
       id: string;
     };
     totalSubscribed: string;
+  }
+  interface Holder {
+    rank: number;
+    wallet: string;
+    tokens: string;
   }
   
 
@@ -49,7 +54,7 @@ export default function Home() {
         }
       );
       const result = await response.json();
-      const holders = result.data.agentKey.users.map((user: User, index: number) => ({
+      const holders = result.data.agentKey.users.map((user: any, index: number): Holder => ({
         rank: index + 1,
         wallet: user.id.replace(
           "0x4aaba1b66a9a3e3053343ec11beeec2d205904df-",
@@ -61,7 +66,7 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching top holders:", error);
     }
-  }
+  }  
 
   // Fetch top subscribers
   async function fetchTopSubscribers(limit = 10) {
