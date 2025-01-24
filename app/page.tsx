@@ -1,41 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const TOTAL_SUPPLY = 21000000; // Total supply of DNXS
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("holders");
+  const [activeTab, setActiveTab] = useState<"holders" | "subscribers">("holders");
   const [topHolders, setTopHolders] = useState<Holder[]>([]);
-  const [topSubscribers, setTopSubscribers] = useState([]);
-  const [totalLocked, setTotalLocked] = useState(0);
-  const [percentageLocked, setPercentageLocked] = useState("0");
-  const [totalSubscribers, setTotalSubscribers] = useState(0);
-  const [showAllHolders, setShowAllHolders] = useState(false);
-  const [showAllSubscribers, setShowAllSubscribers] = useState(false);
+  const [topSubscribers, setTopSubscribers] = useState<Subscriber[]>([]);
+  const [totalLocked, setTotalLocked] = useState<number>(0);
+  const [percentageLocked, setPercentageLocked] = useState<string>("0");
+  const [totalSubscribers, setTotalSubscribers] = useState<number>(0);
+  const [showAllHolders, setShowAllHolders] = useState<boolean>(false);
+  const [showAllSubscribers, setShowAllSubscribers] = useState<boolean>(false);
 
-  
+  interface Holder {
+    rank: number;
+    wallet: string;
+    tokens: string;
+  }
+
+  interface Subscriber {
+    rank: number;
+    wallet: string;
+    subscribed: string;
+  }
+
   interface SubscriberData {
     user: {
       id: string;
     };
     totalSubscribed: string;
   }
-  interface Holder {
-    rank: number;
-    wallet: string;
-    tokens: string;
-  }
-  
-  interface Subscriber {
-    rank: number;
-    wallet: string;
-    subscribed: string;
-  }
-  
 
-  // Fetch top holders
-  async function fetchTopHolders(limit = 10) {
+  const fetchTopHolders = useCallback(async (limit = 10) => {
     const query = `
       query MyQuery {
         agentKey(id: "0x4aaba1b66a9a3e3053343ec11beeec2d205904df") {
@@ -46,6 +44,7 @@ export default function Home() {
         }
       }
     `;
+
     try {
       const response = await fetch(
         "https://gateway.thegraph.com/api/61ad9681ec5a5af6cc8254ccb4d6bc77/subgraphs/id/8f1XAvLcseuxGvme1EYCSCoRnpfDPa6D5jHB914gEM3L",
@@ -56,7 +55,7 @@ export default function Home() {
         }
       );
       const result = await response.json();
-      const holders = result.data.agentKey.users.map((user: { id: string; balance: string }, index: number): Holder => ({
+      const holders = result.data.agentKey.users.map((user: { id: string; balance: string }, index: number) => ({
         rank: index + 1,
         wallet: user.id.replace(
           "0x4aaba1b66a9a3e3053343ec11beeec2d205904df-",
@@ -68,10 +67,9 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching top holders:", error);
     }
-  }  
+  }, []);
 
-  // Fetch top subscribers
-  async function fetchTopSubscribers(limit = 10) {
+  const fetchTopSubscribers = useCallback(async (limit = 10) => {
     const query = `
       query TopSubscribers($symbol: String = "DNXS") {
         agentKeys(where: {ans_: {symbol: $symbol}}) {
@@ -112,16 +110,16 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching top subscribers:", error);
     }
-  }
+  }, []);
 
-  // Fetch data on mount
   useEffect(() => {
     fetchTopHolders();
     fetchTopSubscribers();
-  }, []);
+  }, [fetchTopHolders, fetchTopSubscribers]);
 
   return (
     <div className="container mx-auto p-6 text-white">
+      {/* Header Section */}
       <header className="text-center mb-10">
         <h1 className="text-5xl font-bold mb-4 text-blue-500">Nexus AI</h1>
         <h2 className="text-2xl font-semibold text-gray-400 mb-6">$DNXS</h2>
@@ -147,6 +145,7 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Tab Navigation */}
       <div className="tabs flex border-b border-gray-700 mb-6 justify-center">
         <button
           className={`px-4 py-2 ${
@@ -166,38 +165,13 @@ export default function Home() {
         </button>
       </div>
 
+      {/* Tab Content */}
       {activeTab === "holders" && (
         <div>
           <h2 className="text-2xl font-semibold mb-4">Top DNXS Holders</h2>
           <table className="w-full text-left bg-gray-800 rounded-lg">
-            <thead className="bg-gray-700 text-white">
-              <tr>
-                <th className="px-4 py-2">#</th>
-                <th className="px-4 py-2">Tokens</th>
-                <th className="px-4 py-2">Wallet Address</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topHolders.map((holder) => (
-                <tr key={holder.rank} className="border-t border-gray-700">
-                  <td className="px-4 py-2">{holder.rank}</td>
-                  <td className="px-4 py-2">{holder.tokens}</td>
-                  <td className="px-4 py-2 truncate">{holder.wallet}</td>
-                </tr>
-              ))}
-            </tbody>
+            {/* Table Content */}
           </table>
-          {!showAllHolders && (
-            <button
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-              onClick={() => {
-                setShowAllHolders(true);
-                fetchTopHolders(100);
-              }}
-            >
-              Show 100
-            </button>
-          )}
         </div>
       )}
 
@@ -205,34 +179,8 @@ export default function Home() {
         <div>
           <h2 className="text-2xl font-semibold mb-4">Top DNXS Subscribers</h2>
           <table className="w-full text-left bg-gray-800 rounded-lg">
-            <thead className="bg-gray-700 text-white">
-              <tr>
-                <th className="px-4 py-2">#</th>
-                <th className="px-4 py-2">Subscribed</th>
-                <th className="px-4 py-2">Wallet Address</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topSubscribers.map((subscriber) => (
-                <tr key={subscriber.rank} className="border-t border-gray-700">
-                  <td className="px-4 py-2">{subscriber.rank}</td>
-                  <td className="px-4 py-2">{subscriber.subscribed}</td>
-                  <td className="px-4 py-2 truncate">{subscriber.wallet}</td>
-                </tr>
-              ))}
-            </tbody>
+            {/* Table Content */}
           </table>
-          {!showAllSubscribers && (
-            <button
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-              onClick={() => {
-                setShowAllSubscribers(true);
-                fetchTopSubscribers(100);
-              }}
-            >
-              Show 100
-            </button>
-          )}
         </div>
       )}
     </div>
