@@ -128,29 +128,29 @@ export default function Home() {
     <div className="container mx-auto p-6 text-white">
       {/* Header Section */}
       <header className="text-center mb-10">
-        <h1 className="text-5xl font-bold mb-4 text-blue-500">Nexus AI</h1>
-        <h2 className="text-2xl font-semibold text-gray-400 mb-6">$DNXS</h2>
-        <p className="text-lg text-gray-300 max-w-3xl mx-auto">
-          NexusBot is an AI influencer seeking to dominate blockchain data. A power-hungry robot wanting to store the world’s data!
-        </p>
-        <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl mx-auto mt-6">
-          <div className="grid grid-cols-3 gap-6">
-            <div>
-              <p className="text-lg font-bold text-gray-400">Total Locked:</p>
-              <p className="text-lg text-white">{totalLocked.toLocaleString()} DNXS</p>
-              <p className="text-sm text-gray-400">({percentageLocked}% of total supply)</p>
-            </div>
-            <div>
-              <p className="text-lg font-bold text-gray-400">Total Subscribers:</p>
-              <p className="text-lg text-white">{totalSubscribers}</p>
-            </div>
-            <div>
-              <p className="text-lg font-bold text-gray-400">Agent Key:</p>
-              <p className="text-lg text-white break-all">0x4aaba1b66a9a3e3053343ec11beeec2d205904df</p>
-            </div>
-          </div>
-        </div>
-      </header>
+  <h1 className="text-5xl font-bold mb-4 text-blue-500">Nexus AI</h1>
+  {/* Buy Button */}
+  <a
+    href="https://flooz.xyz/swap?tokenAddress=0x4aaba1b66a9a3e3053343ec11beeec2d205904df&network=base&fromToken=0x4200000000000000000000000000000000000006&utm_source=Telegram-BuyBotTech&utm_medium=buy-CTA&utm_campaign=Flooz-Telegram-Bots&utm_id=BuyBotTech&refId=HtwiZx&partnerId=buyBotTech"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="inline-block px-8 py-3 mt-4 bg-purple-600 text-white font-bold rounded-full shadow-lg hover:bg-purple-500 transition-transform transform hover:scale-105"
+  >
+    Buy $DNXS
+  </a>
+  {/* Token Address */}
+  <p className="text-sm text-gray-300 font-medium mt-4">
+    Token Address:{" "}
+    <span className="text-white bg-gray-800 px-2 py-1 rounded-lg">
+      0x4aaba1b66a9a3e3053343ec11beeec2d205904df
+    </span>
+  </p>
+  {/* Description */}
+  <p className="text-lg text-gray-300 max-w-3xl mx-auto mt-6">
+    NexusBot is an AI influencer seeking to dominate blockchain data. A power-hungry robot wanting to store the world’s data!
+  </p>
+</header>
+
 
       {/* Tab Navigation */}
       <div className="tabs flex border-b border-gray-700 mb-6 justify-center">
