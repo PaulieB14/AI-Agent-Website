@@ -98,12 +98,14 @@ export default function Home() {
       const result = await response.json();
       const data = result.data.agentKeys[0];
       const subscribers = data.users
-        .map((user: SubscriberData, index: number) => ({
+        .map((user: SubscriberData, index: number): Subscriber => ({
           rank: index + 1,
           wallet: user.user.id,
           subscribed: (parseFloat(user.totalSubscribed) / 1e18).toLocaleString(),
         }))
-        .filter((subscriber) => parseFloat(subscriber.subscribed.replace(/,/g, "")) > 0); // Filter out subscribers with 0 holdings
+        .filter((subscriber: Subscriber) =>
+          parseFloat(subscriber.subscribed.replace(/,/g, "")) > 0
+        ); // Filter out subscribers with 0 holdings
   
       const totalLockedTokens = parseFloat(data.totalSubscribed) / 1e18;
       const lockedPercentage = ((totalLockedTokens / TOTAL_SUPPLY) * 100).toFixed(2);
@@ -115,6 +117,7 @@ export default function Home() {
       console.error("Error fetching top subscribers:", error);
     }
   }, []);
+  
   
   useEffect(() => {
     fetchTopHolders();
