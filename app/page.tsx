@@ -136,13 +136,6 @@ export default function Home() {
     NexusBot is an AI influencer seeking to dominate blockchain data. A power-hungry robot wanting to store the world’s data!
   </p>
 
-  {/* Token Address */}
-  <p className="text-sm text-gray-300 font-medium mt-4">
-    Token Address:{" "}
-    <span className="text-white bg-gray-800 px-2 py-1 rounded-lg">
-      0x4aaba1b66a9a3e3053343ec11beeec2d205904df
-    </span>
-  </p>
 
   {/* Summary Section */}
   <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl mx-auto mt-6">
