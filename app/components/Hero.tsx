@@ -15,6 +15,8 @@ export default function Hero() {
           </button>
         </div>
       </div>
+      {/* Ensure the Hero section doesn't block content scrolling */}
+      <div className="absolute top-0 left-0 w-full h-full bg-transparent pointer-events-none" />
     </section>
   );
 }
