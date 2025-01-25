@@ -16,71 +16,33 @@ body {
   filter: brightness(1.1);
 }
 
-/* Main Container */
-main {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background-color: rgba(0, 0, 0, 0.6);
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-}
-
-/* Link Styles */
-a {
-  color: #1da1f2;
-  text-decoration: none;
-  transition: color 0.3s ease, opacity 0.3s ease;
-}
-
-a:hover {
-  color: #ffffff;
-  opacity: 0.9;
-}
-
-/* Button Styles */
-button {
-  cursor: pointer;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: bold;
-  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-}
-
-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-}
-
-button.primary {
-  background-color: #6d28d9;
-  color: #ffffff;
-}
-
-button.primary:hover {
-  background-color: #5b21b6;
-}
-
-button.secondary {
-  background-color: #374151;
-  color: #ffffff;
-}
-
-button.secondary:hover {
-  background-color: #4b5563;
-}
-
-/* Header and Footer */
+/* Navbar Styles */
 header {
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: #1a1a2e; /* Uniform solid color */
   padding: 1rem;
   top: 0;
   z-index: 50;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+header nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
 header a {
   color: #ffffff;
+  margin-left: 1rem;
   transition: opacity 0.3s ease;
 }
 
@@ -88,34 +50,113 @@ header a:hover {
   opacity: 0.8;
 }
 
-footer {
-  background-color: rgba(0, 0, 0, 0.9);
-  color: #d1d5db;
-  text-align: center;
-  padding: 1rem;
-  font-size: 0.9rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+/* Buy Button */
+header .buy-button {
+  background-color: #6d28d9;
+  color: #ffffff;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+header .buy-button:hover {
+  transform: scale(1.05);
+  background-color: #5b21b6;
 }
 
 /* Hero Section */
 .hero-section {
   text-align: center;
-  padding: 4rem 2rem;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 6rem 2rem;
+  background-color: rgba(0, 0, 0, 0.5); /* Slightly darker background */
+  border-radius: 12px;
+  margin: 1.5rem auto;
+  max-width: 1000px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
 .hero-section h1 {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 800;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  color: #38bdf8; /* Futuristic blue */
 }
 
 .hero-section p {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
+  line-height: 1.8;
   margin-bottom: 2rem;
   color: #d1d5db;
+}
+
+.hero-section button {
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  transition: transform 0.2s ease, background-color 0.3s ease;
+  margin: 0.5rem;
+}
+
+.hero-section button:hover {
+  transform: scale(1.05);
+}
+
+/* Hero Buttons */
+.hero-section .primary {
+  background-color: #6d28d9;
+  color: #ffffff;
+}
+
+.hero-section .primary:hover {
+  background-color: #5b21b6;
+}
+
+.hero-section .secondary {
+  background-color: #374151;
+  color: #ffffff;
+}
+
+.hero-section .secondary:hover {
+  background-color: #4b5563;
+}
+
+/* Table Container */
+.table-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  overflow-x: auto; /* Allows horizontal scroll for small devices */
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-container th,
+.table-container td {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-container th {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.table-container td {
+  color: #d1d5db;
+}
+
+.table-container tr:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Accessibility Enhancements */
