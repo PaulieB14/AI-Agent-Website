@@ -18,7 +18,7 @@ body {
 
 /* Navbar Styles */
 header {
-  background-color: #1a1a2e; /* Uniform solid color */
+  background-color: #1a1a2e;
   padding: 1rem;
   top: 0;
   z-index: 50;
@@ -29,8 +29,10 @@ header nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap; /* Wrap items for smaller screens */
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 1rem;
 }
 
 header h1 {
@@ -50,7 +52,6 @@ header a:hover {
   opacity: 0.8;
 }
 
-/* Buy Button */
 header .buy-button {
   background-color: #6d28d9;
   color: #ffffff;
@@ -66,11 +67,28 @@ header .buy-button:hover {
   background-color: #5b21b6;
 }
 
+@media (max-width: 768px) {
+  header nav {
+    flex-direction: column; /* Stack items vertically on mobile */
+  }
+
+  header h1 {
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  header .buy-button {
+    margin-top: 1rem;
+    width: 100%; /* Full-width button on smaller screens */
+    text-align: center;
+  }
+}
+
 /* Hero Section */
 .hero-section {
   text-align: center;
   padding: 6rem 2rem;
-  background-color: rgba(0, 0, 0, 0.5); /* Slightly darker background */
+  background-color: rgba(0, 0, 0, 0.5);
   border-radius: 12px;
   margin: 1.5rem auto;
   max-width: 1000px;
@@ -81,7 +99,7 @@ header .buy-button:hover {
   font-size: 2.5rem;
   font-weight: 800;
   margin-bottom: 1.5rem;
-  color: #38bdf8; /* Futuristic blue */
+  color: #38bdf8;
 }
 
 .hero-section p {
@@ -104,7 +122,6 @@ header .buy-button:hover {
   transform: scale(1.05);
 }
 
-/* Hero Buttons */
 .hero-section .primary {
   background-color: #6d28d9;
   color: #ffffff;
@@ -123,11 +140,31 @@ header .buy-button:hover {
   background-color: #4b5563;
 }
 
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 4rem 1rem; /* Reduce padding on smaller screens */
+    margin: 1rem;
+  }
+
+  .hero-section h1 {
+    font-size: 2rem; /* Smaller heading on mobile */
+  }
+
+  .hero-section p {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .hero-section button {
+    width: 100%; /* Full-width buttons on smaller screens */
+  }
+}
+
 /* Table Container */
 .table-container {
   max-width: 800px;
   margin: 2rem auto;
-  overflow-x: auto; /* Allows horizontal scroll for small devices */
+  overflow-x: auto; /* Enables horizontal scroll on small devices */
   background-color: rgba(0, 0, 0, 0.7);
   border-radius: 12px;
   padding: 1rem;
@@ -159,22 +196,19 @@ header .buy-button:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+@media (max-width: 768px) {
+  .table-container {
+    padding: 1rem 0.5rem; /* Reduce padding */
+  }
+
+  .table-container table {
+    font-size: 0.875rem; /* Smaller text size on mobile */
+  }
+}
+
 /* Accessibility Enhancements */
 button:focus,
 a:focus {
   outline: 2px solid #1da1f2;
   outline-offset: 4px;
-}
-
-/* Utility Classes for Consistency */
-.text-white {
-  color: #ffffff;
-}
-
-.text-gray-light {
-  color: #d1d5db;
-}
-
-.bg-dark {
-  background-color: rgba(0, 0, 0, 0.85);
 }
