@@ -12,14 +12,16 @@ body {
   font-family: 'Roboto', sans-serif;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
   filter: brightness(1.1);
+  box-sizing: border-box; /* Ensure consistent sizing */
 }
 
 /* Navbar Styles */
 header {
-  background-color: #1a1a2e; /* Dark background for the navbar */
-  padding: 1rem;
+  background-color: #1a1a2e; /* Dark navbar background */
+  width: 100%; /* Full-width navbar */
+  padding: 1rem 1rem; /* Padding for content */
   top: 0;
   z-index: 50;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
@@ -29,21 +31,20 @@ header nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap; /* Wrap items for smaller screens */
-  max-width: 1200px;
+  flex-wrap: wrap; /* Wrap items for small screens */
+  max-width: 1200px; /* Constrain on larger screens */
+  width: 100%; /* Ensure full width */
   margin: 0 auto;
-  padding: 0 1rem;
+  box-sizing: border-box;
 }
 
-/* Logo / Site Name */
 header .navbar-brand {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #38bdf8; /* Tailwind primary blue color */
+  color: #38bdf8; /* Tailwind blue */
   text-transform: uppercase;
 }
 
-/* Navbar Links */
 header a.nav-link {
   color: #ffffff;
   margin-left: 1rem;
@@ -55,19 +56,6 @@ header a.nav-link:hover {
   opacity: 0.8;
 }
 
-/* Social Media Icons */
-header .social-icon {
-  color: #ffffff; /* White icons */
-  font-size: 1.5rem; /* Slightly larger icons */
-  margin-left: 0.5rem;
-  transition: color 0.3s ease;
-}
-
-header .social-icon:hover {
-  color: #38bdf8; /* Change to Tailwind blue on hover */
-}
-
-/* Buy Button */
 header .buy-button {
   background-color: #6d28d9; /* Purple */
   color: #ffffff;
@@ -79,14 +67,15 @@ header .buy-button {
 }
 
 header .buy-button:hover {
-  transform: scale(1.05); /* Slight zoom effect */
+  transform: scale(1.05); /* Slight zoom */
   background-color: #5b21b6; /* Darker purple */
 }
 
-/* Mobile Responsiveness */
+/* Responsive Navbar */
 @media (max-width: 768px) {
   header nav {
-    flex-direction: column; /* Stack items vertically on mobile */
+    flex-direction: column; /* Stack items */
+    padding: 0;
   }
 
   header .navbar-brand {
@@ -96,7 +85,7 @@ header .buy-button:hover {
 
   header .buy-button {
     margin-top: 1rem;
-    width: 100%; /* Full-width button on smaller screens */
+    width: 100%; /* Full-width button */
     text-align: center;
   }
 }
@@ -104,16 +93,17 @@ header .buy-button:hover {
 /* Hero Section */
 .hero-section {
   text-align: center;
-  padding: 6rem 2rem;
-  background-color: rgba(0, 0, 0, 0.5);
+  padding: 4rem 1rem;
+  background-color: rgba(0, 0, 0, 0.6);
   border-radius: 12px;
   margin: 1.5rem auto;
-  max-width: 1000px;
+  max-width: 90%; /* Constrain width */
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
 }
 
 .hero-section h1 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
   margin-bottom: 1.5rem;
   color: #38bdf8;
@@ -131,8 +121,8 @@ header .buy-button:hover {
   font-weight: bold;
   padding: 0.75rem 1.5rem;
   border-radius: 9999px;
-  transition: transform 0.2s ease, background-color 0.3s ease;
   margin: 0.5rem;
+  transition: transform 0.2s ease, background-color 0.3s ease;
 }
 
 .hero-section button:hover {
@@ -157,31 +147,11 @@ header .buy-button:hover {
   background-color: #4b5563;
 }
 
-@media (max-width: 768px) {
-  .hero-section {
-    padding: 4rem 1rem; /* Reduce padding on smaller screens */
-    margin: 1rem;
-  }
-
-  .hero-section h1 {
-    font-size: 2rem; /* Smaller heading on mobile */
-  }
-
-  .hero-section p {
-    font-size: 1rem;
-    line-height: 1.5;
-  }
-
-  .hero-section button {
-    width: 100%; /* Full-width buttons on smaller screens */
-  }
-}
-
 /* Table Container */
 .table-container {
-  max-width: 800px;
+  max-width: 100%; /* Make table responsive */
   margin: 2rem auto;
-  overflow-x: auto; /* Enables horizontal scroll on small devices */
+  overflow-x: auto; /* Enable scroll on small screens */
   background-color: rgba(0, 0, 0, 0.7);
   border-radius: 12px;
   padding: 1rem;
@@ -219,7 +189,7 @@ header .buy-button:hover {
   }
 
   .table-container table {
-    font-size: 0.875rem; /* Smaller text size on mobile */
+    font-size: 0.875rem; /* Smaller font size */
   }
 }
 
