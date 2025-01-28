@@ -7,7 +7,7 @@ body {
   background-image: url('https://qxfieysdfa5grr7f.public.blob.vercel-storage.com/678a673a4f3a29508da20554-SV8OGxGryUQsWZ5qYnRXZYE7FVG7N0');
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
+  background-attachment: scroll;
   color: #ffffff;
   font-family: 'Roboto', sans-serif;
   margin: 0;
@@ -18,11 +18,11 @@ body {
 
 /* Navbar Styles */
 header {
-  background-color: #1a1a2e;
+  background-color: #1a1a2e; /* Dark background for the navbar */
   padding: 1rem;
   top: 0;
   z-index: 50;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
 }
 
 header nav {
@@ -35,44 +35,61 @@ header nav {
   padding: 0 1rem;
 }
 
-header h1 {
+/* Logo / Site Name */
+header .navbar-brand {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #ffffff;
+  color: #38bdf8; /* Tailwind primary blue color */
   text-transform: uppercase;
 }
 
-header a {
+/* Navbar Links */
+header a.nav-link {
   color: #ffffff;
   margin-left: 1rem;
+  font-size: 1.2rem;
   transition: opacity 0.3s ease;
 }
 
-header a:hover {
+header a.nav-link:hover {
   opacity: 0.8;
 }
 
+/* Social Media Icons */
+header .social-icon {
+  color: #ffffff; /* White icons */
+  font-size: 1.5rem; /* Slightly larger icons */
+  margin-left: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+header .social-icon:hover {
+  color: #38bdf8; /* Change to Tailwind blue on hover */
+}
+
+/* Buy Button */
 header .buy-button {
-  background-color: #6d28d9;
+  background-color: #6d28d9; /* Purple */
   color: #ffffff;
   font-weight: bold;
   padding: 0.5rem 1rem;
-  border-radius: 9999px;
+  border-radius: 9999px; /* Fully rounded */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease, background-color 0.3s ease;
 }
 
 header .buy-button:hover {
-  transform: scale(1.05);
-  background-color: #5b21b6;
+  transform: scale(1.05); /* Slight zoom effect */
+  background-color: #5b21b6; /* Darker purple */
 }
 
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
   header nav {
     flex-direction: column; /* Stack items vertically on mobile */
   }
 
-  header h1 {
+  header .navbar-brand {
     margin-bottom: 1rem;
     text-align: center;
   }
