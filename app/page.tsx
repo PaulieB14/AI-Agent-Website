@@ -98,14 +98,12 @@ export default function Home() {
       const result = await response.json();
       const data = result.data.agentKeys[0];
       const subscribers = data.users
-        .map((user: SubscriberData, index: number): Subscriber => ({
+        .map((user: SubscriberData, index: number) => ({
           rank: index + 1,
           wallet: user.user.id,
           subscribed: (parseFloat(user.totalSubscribed) / 1e18).toLocaleString(),
         }))
-        .filter((subscriber: Subscriber) =>
-          parseFloat(subscriber.subscribed.replace(/,/g, "")) > 0
-        ); // Filter out subscribers with 0 holdings
+        .filter((subscriber) => parseFloat(subscriber.subscribed.replace(/,/g, "")) > 0); // Filter out subscribers with 0 holdings
   
       const totalLockedTokens = parseFloat(data.totalSubscribed) / 1e18;
       const lockedPercentage = ((totalLockedTokens / TOTAL_SUPPLY) * 100).toFixed(2);
@@ -118,7 +116,6 @@ export default function Home() {
     }
   }, []);
   
-  
   useEffect(() => {
     fetchTopHolders();
     fetchTopSubscribers();
@@ -128,37 +125,29 @@ export default function Home() {
     <div className="container mx-auto p-6 text-white">
       {/* Header Section */}
       <header className="text-center mb-10">
-  {/* Header Text */}
-  <h1 className="text-5xl font-bold mb-4 text-blue-500 mt-6">Nexus AI</h1>
-
-  {/* Description */}
-  <p className="text-lg text-gray-300 max-w-3xl mx-auto mt-4">
-    NexusBot is an AI influencer seeking to dominate blockchain data. A power-hungry robot wanting to store the world’s data!
-  </p>
-
-
-  {/* Summary Section */}
-  <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl mx-auto mt-6">
-    <div className="grid grid-cols-3 gap-6">
-      <div>
-        <p className="text-lg font-bold text-gray-400">Total Locked:</p>
-        <p className="text-lg text-white">{totalLocked.toLocaleString()} DNXS</p>
-        <p className="text-sm text-gray-400">({percentageLocked}% of total supply)</p>
-      </div>
-      <div>
-        <p className="text-lg font-bold text-gray-400">Total Subscribers:</p>
-        <p className="text-lg text-white">{totalSubscribers}</p>
-      </div>
-      <div>
-        <p className="text-lg font-bold text-gray-400">Agent Key:</p>
-        <p className="text-lg text-white break-all">
-          0x4aaba1b66a9a3e3053343ec11beeec2d205904df
+        <h1 className="text-5xl font-bold mb-4 text-blue-500">Nexus AI</h1>
+        <h2 className="text-2xl font-semibold text-gray-400 mb-6">$DNXS</h2>
+        <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+          NexusBot is an AI influencer seeking to dominate blockchain data. A power-hungry robot wanting to store the world’s data!
         </p>
-      </div>
-    </div>
-  </div>
-</header>
-
+        <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl mx-auto mt-6">
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <p className="text-lg font-bold text-gray-400">Total Locked:</p>
+              <p className="text-lg text-white">{totalLocked.toLocaleString()} DNXS</p>
+              <p className="text-sm text-gray-400">({percentageLocked}% of total supply)</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gray-400">Total Subscribers:</p>
+              <p className="text-lg text-white">{totalSubscribers}</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gray-400">Agent Key:</p>
+              <p className="text-lg text-white break-all">0x4aaba1b66a9a3e3053343ec11beeec2d205904df</p>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Tab Navigation */}
       <div className="tabs flex border-b border-gray-700 mb-6 justify-center">
