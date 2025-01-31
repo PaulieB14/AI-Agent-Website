@@ -12,12 +12,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="description" content="Nexus AI - The future of blockchain data" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         
-        {/* Add Bootstrap CSS link here */}
+        {/* Corrected the crossorigin to crossOrigin */}
         <link
           href="https://cdn.jsdelivr.net/npm/bootstrap5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet"
           integrity="sha384-QWTKZjyjPEJt5WmRAU90FeRpok6YctnYmDr5pNlyT2BrJxj0hMJy6hW+ALEwIH"
-          crossorigin="anonymous"
+          crossOrigin="anonymous"  // Fixed attribute name here
         />
       </Head>
       <body>
