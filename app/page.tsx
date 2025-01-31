@@ -13,7 +13,7 @@ interface Holder {
 interface Subscriber {
   rank: number;
   wallet: string;
-  subscribed: string;
+  subscribed: string; // 'subscribed' is a string containing a numeric value
 }
 
 interface SubscriberData {
@@ -103,7 +103,7 @@ export default function Home() {
           wallet: user.user.id,
           subscribed: (parseFloat(user.totalSubscribed) / 1e18).toLocaleString(),
         }))
-        .filter((subscriber) => parseFloat(subscriber.subscribed.replace(/,/g, "")) > 0); // Filter out subscribers with 0 holdings
+        .filter((subscriber: Subscriber) => parseFloat(subscriber.subscribed.replace(/,/g, "")) > 0); // Filter out subscribers with 0 holdings
   
       const totalLockedTokens = parseFloat(data.totalSubscribed) / 1e18;
       const lockedPercentage = ((totalLockedTokens / TOTAL_SUPPLY) * 100).toFixed(2);
