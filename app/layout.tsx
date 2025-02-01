@@ -3,9 +3,7 @@
 import "./globals.css"; // Correct relative path to globals.css
 import Navbar from "./components/Navbar"; // Correct relative path to Navbar
 import Head from "next/head"; // Import Head component from Next.js
-// layout.tsx
-import 'bootstrap/dist/css/bootstrap.min.css';
-
+import 'bootstrap/dist/css/bootstrap.min.css'; // Ensure Bootstrap is applied
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,14 +11,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <Head>
         <title>Nexus AI</title>
         <meta name="description" content="Nexus AI - The future of blockchain data" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         
-        {/* Corrected the crossorigin to crossOrigin */}
+        {/* Bootstrap CSS with fixed crossorigin */}
         <link
           href="https://cdn.jsdelivr.net/npm/bootstrap5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet"
           integrity="sha384-QWTKZjyjPEJt5WmRAU90FeRpok6YctnYmDr5pNlyT2BrJxj0hMJy6hW+ALEwIH"
-          crossOrigin="anonymous"  // Fixed attribute name here
+          crossOrigin="anonymous"  // Corrected the crossorigin attribute
         />
       </Head>
       <body>
