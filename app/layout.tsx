@@ -3,6 +3,9 @@
 import "./globals.css"; // Correct relative path to globals.css
 import Navbar from "./components/Navbar"; // Correct relative path to Navbar
 import Head from "next/head"; // Import Head component from Next.js
+// layout.tsx
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

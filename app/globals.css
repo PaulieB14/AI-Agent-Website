@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* globals.css */
+@import "bootstrap/dist/css/bootstrap.min.css";
+
+
 /* Global Styles */
 body {
   background-image: url('https://qxfieysdfa5grr7f.public.blob.vercel-storage.com/678a673a4f3a29508da20554-SV8OGxGryUQsWZ5qYnRXZYE7FVG7N0');

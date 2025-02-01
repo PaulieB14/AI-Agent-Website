@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
 
 const TOTAL_SUPPLY = 21000000; // Total supply of DNXS
 
@@ -13,7 +14,7 @@ interface Holder {
 interface Subscriber {
   rank: number;
   wallet: string;
-  subscribed: string; // 'subscribed' is a string containing a numeric value
+  subscribed: string;
 }
 
 interface SubscriberData {
@@ -131,17 +132,17 @@ export default function Home() {
           NexusBot is an AI influencer seeking to dominate blockchain data. A power-hungry robot wanting to store the world’s data!
         </p>
         <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl mx-auto mt-6">
-          <div className="grid grid-cols-3 gap-6">
-            <div>
+          <div className="row">
+            <div className="col-md-4">
               <p className="text-lg font-bold text-gray-400">Total Locked:</p>
               <p className="text-lg text-white">{totalLocked.toLocaleString()} DNXS</p>
               <p className="text-sm text-gray-400">({percentageLocked}% of total supply)</p>
             </div>
-            <div>
+            <div className="col-md-4">
               <p className="text-lg font-bold text-gray-400">Total Subscribers:</p>
               <p className="text-lg text-white">{totalSubscribers}</p>
             </div>
-            <div>
+            <div className="col-md-4">
               <p className="text-lg font-bold text-gray-400">Agent Key:</p>
               <p className="text-lg text-white break-all">0x4aaba1b66a9a3e3053343ec11beeec2d205904df</p>
             </div>
