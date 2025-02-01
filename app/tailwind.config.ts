@@ -2,13 +2,13 @@ import { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx}',
-    './src/components/**/*.{js,ts,jsx,tsx}',
+    './app/**/*.{js,ts,jsx,tsx}', // Adjusted to fit your structure
+    './components/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
       colors: {
-        customColor: '#ff6347',
+        customColor: '#ff6347', // Example of custom color usage
       },
       screens: {
         sm: '640px',
