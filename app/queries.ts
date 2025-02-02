@@ -1,18 +1,22 @@
 import { gql } from '@apollo/client';
 
-export const USER_QUERY = gql`
-  query GetUser($id: String!) {
-    user(id: $id) {
-      agentKeys(orderBy: id) {
-        id
+export const HOLDERS_QUERY = gql`
+  query GetHolders {
+    agentKey(id: "0x4aaba1b66a9a3e3053343ec11beeec2d205904df") {
+      users(first: 10, orderBy: balance, orderDirection: desc) {
         balance
-        agentKey {
-          ans {
-            symbol
-          }
-          price
-          marketCap
-        }
+        id
+      }
+    }
+  }
+`;
+
+export const SUBSCRIBERS_QUERY = gql`
+  query GetSubscribers {
+    agentKey(id: "0x4aaba1b66a9a3e3053343ec11beeec2d205904df") {
+      users(first: 10, orderBy: totalSubscribed, orderDirection: desc) {
+        totalSubscribed
+        id
       }
     }
   }
