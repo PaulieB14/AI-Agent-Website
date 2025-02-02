@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* globals.css */
-@import "bootstrap/dist/css/bootstrap.min.css";
-
-
 /* Global Styles */
 body {
   background-image: url('https://qxfieysdfa5grr7f.public.blob.vercel-storage.com/678a673a4f3a29508da20554-SV8OGxGryUQsWZ5qYnRXZYE7FVG7N0');
@@ -22,12 +18,20 @@ body {
 
 /* Main Container */
 main {
+  width: 100%;
   max-width: 900px;
-  margin: 2rem auto;
-  padding: 2rem;
+  margin: 1rem auto;
+  padding: 1rem;
   background-color: rgba(0, 0, 0, 0.6);
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 640px) {
+  main {
+    margin: 2rem auto;
+    padding: 2rem;
+  }
 }
 
 /* Link Styles */
@@ -104,22 +108,41 @@ footer {
 /* Hero Section */
 .hero-section {
   text-align: center;
-  padding: 4rem 2rem;
+  padding: 2rem 1rem;
   background-color: rgba(0, 0, 0, 0.3);
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+@media (min-width: 640px) {
+  .hero-section {
+    padding: 4rem 2rem;
+  }
+}
+
 .hero-section h1 {
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: 800;
   margin-bottom: 1rem;
 }
 
+@media (min-width: 640px) {
+  .hero-section h1 {
+    font-size: 3rem;
+  }
+}
+
 .hero-section p {
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
   color: #d1d5db;
+}
+
+@media (min-width: 640px) {
+  .hero-section p {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+  }
 }
 
 /* Accessibility Enhancements */
@@ -127,6 +150,18 @@ button:focus,
 a:focus {
   outline: 2px solid #1da1f2;
   outline-offset: 4px;
+}
+
+/* Touch target size for mobile */
+@media (max-width: 640px) {
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* Utility Classes for Consistency */

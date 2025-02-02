@@ -1,31 +1,29 @@
-"use client";
+import "./globals.css";
+import Navbar from "./components/Navbar";
+import { Metadata } from "next";
+import { Viewport } from "next";
 
-import "./globals.css"; // Correct relative path to globals.css
-import Navbar from "./components/Navbar"; // Correct relative path to Navbar
-import Head from "next/head"; // Import Head component from Next.js
-import 'bootstrap/dist/css/bootstrap.min.css'; // Ensure Bootstrap is applied
+export const metadata: Metadata = {
+  title: "Nexus AI",
+  description: "Nexus AI - The future of blockchain data",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <Head>
-        <title>Nexus AI</title>
-        <meta name="description" content="Nexus AI - The future of blockchain data" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        
-        {/* Bootstrap CSS with fixed crossorigin */}
-        <link
-          href="https://cdn.jsdelivr.net/npm/bootstrap5.3.3/dist/css/bootstrap.min.css"
-          rel="stylesheet"
-          integrity="sha384-QWTKZjyjPEJt5WmRAU90FeRpok6YctnYmDr5pNlyT2BrJxj0hMJy6hW+ALEwIH"
-          crossOrigin="anonymous"  // Corrected the crossorigin attribute
-        />
-      </Head>
-      <body>
+    <html lang="en" className="min-h-screen bg-gray-900">
+      <body className="min-h-screen flex flex-col">
         <Navbar />
-        <main>{children}</main>
-        <footer className="bg-gray-800 text-center text-gray-400 py-4">
-          © 2025 Nexus AI. All rights reserved.
+        <main className="flex-grow">{children}</main>
+        <footer className="bg-gray-800 text-center text-gray-400 py-4 px-4 mt-auto">
+          <div className="max-w-7xl mx-auto">
+            © 2025 Nexus AI. All rights reserved.
+          </div>
         </footer>
       </body>
     </html>
