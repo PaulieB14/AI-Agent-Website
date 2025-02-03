@@ -23,15 +23,18 @@ export default function WalletQuery() {
     fetchPolicy: 'no-cache'
   });
 
-  const [showAllHolders, setShowAllHolders] = useState(false);
-  const [showAllSubscribers, setShowAllSubscribers] = useState(false);
+  const [visibleHolders, setVisibleHolders] = useState(10);
+  const [visibleSubscribers, setVisibleSubscribers] = useState(10);
   const [isViewingSubscribers, setIsViewingSubscribers] = useState(false);
 
-  // Reset showAll state when switching views
+  const DEFAULT_VISIBLE = 10;
+  const EXPANDED_VISIBLE = 100;
+
+  // Reset visible entries when switching views
   const toggleView = () => {
     setIsViewingSubscribers(!isViewingSubscribers);
-    setShowAllHolders(false);
-    setShowAllSubscribers(false);
+    setVisibleHolders(DEFAULT_VISIBLE);
+    setVisibleSubscribers(DEFAULT_VISIBLE);
   };
 
   const formatGwei = (value: string | undefined): string => {
@@ -123,12 +126,25 @@ export default function WalletQuery() {
   const getCurrentData = () => {
     if (isViewingSubscribers) {
       const filtered = processUserData(subscribersData?.agentKey?.users, 'totalSubscribed');
-      return showAllSubscribers ? filtered : filtered.slice(0, 10);
+      return filtered.slice(0, visibleSubscribers);
     } else {
       const filtered = processUserData(holdersData?.agentKey?.users, 'balance');
-      return showAllHolders ? filtered : filtered.slice(0, 10);
+      return filtered.slice(0, visibleHolders);
     }
   };
+
+  const toggleVisibleEntries = () => {
+    if (isViewingSubscribers) {
+      setVisibleSubscribers(visibleSubscribers === DEFAULT_VISIBLE ? EXPANDED_VISIBLE : DEFAULT_VISIBLE);
+    } else {
+      setVisibleHolders(visibleHolders === DEFAULT_VISIBLE ? EXPANDED_VISIBLE : DEFAULT_VISIBLE);
+    }
+  };
+
+  const currentVisibleCount = isViewingSubscribers ? visibleSubscribers : visibleHolders;
+  const totalCount = isViewingSubscribers 
+    ? processUserData(subscribersData?.agentKey?.users, 'totalSubscribed').length 
+    : processUserData(holdersData?.agentKey?.users, 'balance').length;
 
   return (
     <div className="text-center py-8 md:py-10 px-4">
@@ -149,15 +165,15 @@ export default function WalletQuery() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 mb-6">
         <h1 className="text-2xl md:text-3xl font-bold">
           {isViewingSubscribers ? 'DNXS Subscribers' : 'DNXS Holders'}
         </h1>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={toggleView}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
+            className="px-4 sm:px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold text-sm sm:text-base"
           >
             View {isViewingSubscribers ? 'Holders' : 'Subscribers'}
           </button>
@@ -165,7 +181,7 @@ export default function WalletQuery() {
             <button
               type="button"
               onClick={exportToCSV}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
+              className="px-4 sm:px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold text-sm sm:text-base"
             >
               Export CSV
             </button>
@@ -217,20 +233,14 @@ export default function WalletQuery() {
         </div>
       </div>
 
-      {!isViewingSubscribers && (
+      {totalCount > DEFAULT_VISIBLE && (
         <button
-          className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
-          onClick={() => setShowAllHolders(!showAllHolders)}
+          className="mt-4 px-4 sm:px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold text-sm sm:text-base"
+          onClick={toggleVisibleEntries}
         >
-          {showAllHolders ? 'Show Less' : 'Show All Holders'}
-        </button>
-      )}
-      {isViewingSubscribers && (
-        <button
-          className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
-          onClick={() => setShowAllSubscribers(!showAllSubscribers)}
-        >
-          {showAllSubscribers ? 'Show Less' : 'Show All Subscribers'}
+          {currentVisibleCount === DEFAULT_VISIBLE 
+            ? `Show More (${Math.min(EXPANDED_VISIBLE, totalCount)})`
+            : 'Show Less'}
         </button>
       )}
     </div>
