@@ -91,9 +91,17 @@ export default function WalletQuery() {
   };
 
   const downloadCSV = (headers: string[], rows: string[][], filename: string) => {
+    // Properly escape and quote CSV values
+    const escapeCsvValue = (value: string) => {
+      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
+      headers.map(escapeCsvValue).join(','),
+      ...rows.map(row => row.map(escapeCsvValue).join(','))
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -120,11 +128,6 @@ export default function WalletQuery() {
       const filtered = processUserData(holdersData?.agentKey?.users, 'balance');
       return showAllHolders ? filtered : filtered.slice(0, 10);
     }
-  };
-
-  const hasMoreEntries = () => {
-    const data = getCurrentData();
-    return data.length > 10;
   };
 
   return (
@@ -214,20 +217,20 @@ export default function WalletQuery() {
         </div>
       </div>
 
-      {!isViewingSubscribers && !showAllHolders && hasMoreEntries() && (
+      {!isViewingSubscribers && (
         <button
           className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
-          onClick={() => setShowAllHolders(true)}
+          onClick={() => setShowAllHolders(!showAllHolders)}
         >
-          Show All Holders
+          {showAllHolders ? 'Show Less' : 'Show All Holders'}
         </button>
       )}
-      {isViewingSubscribers && !showAllSubscribers && hasMoreEntries() && (
+      {isViewingSubscribers && (
         <button
           className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
-          onClick={() => setShowAllSubscribers(true)}
+          onClick={() => setShowAllSubscribers(!showAllSubscribers)}
         >
-          Show All Subscribers
+          {showAllSubscribers ? 'Show Less' : 'Show All Subscribers'}
         </button>
       )}
     </div>
