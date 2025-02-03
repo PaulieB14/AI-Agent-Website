@@ -2,7 +2,10 @@ import { ApolloClient, InMemoryCache, from, HttpLink } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
 
 const httpLink = new HttpLink({
-  uri: 'https://gateway.thegraph.com/api/61ad9681ec5a5af6cc8254ccb4d6bc77/subgraphs/id/8f1XAvLcseuxGvme1EYCSCoRnpfDPa6D5jHB914gEM3L'
+  uri: 'https://gateway.thegraph.com/api/61ad9681ec5a5af6cc8254ccb4d6bc77/subgraphs/id/8f1XAvLcseuxGvme1EYCSCoRnpfDPa6D5jHB914gEM3L',
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 const errorLink = onError(({ graphQLErrors, networkError }) => {
@@ -23,10 +26,13 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {
-      fetchPolicy: 'no-cache'
+      fetchPolicy: 'network-only'
     },
     query: {
-      fetchPolicy: 'no-cache'
+      fetchPolicy: 'network-only'
+    },
+    mutate: {
+      fetchPolicy: 'network-only'
     }
   }
 });
