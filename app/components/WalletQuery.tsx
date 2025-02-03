@@ -80,8 +80,16 @@ export default function WalletQuery() {
       });
   };
 
+  const getAllData = () => {
+    if (isViewingSubscribers) {
+      return processUserData(subscribersData?.agentKey?.users, 'totalSubscribed');
+    } else {
+      return processUserData(holdersData?.agentKey?.users, 'balance');
+    }
+  };
+
   const exportToCSV = () => {
-    const data = getCurrentData();
+    const data = getAllData();
     if (!data.length) return;
     
     const headers = ['Wallet Address', 'Amount'];
