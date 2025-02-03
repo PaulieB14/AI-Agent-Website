@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useLazyQuery } from '@apollo/client';
+import { useAccount } from 'wagmi';
+import { useWeb3Modal } from '@web3modal/react';
 import client from '../apolloClient';
-import { HOLDERS_QUERY, SUBSCRIBERS_QUERY } from '../queries';
+import { HOLDERS_QUERY, SUBSCRIBERS_QUERY, USER_LOCKED_QUERY } from '../queries';
 
 interface User {
   id: string;
@@ -13,6 +15,14 @@ interface User {
 }
 
 export default function WalletQuery() {
+  const { address, isConnected } = useAccount();
+  const { open } = useWeb3Modal();
+  const [isEligible, setIsEligible] = useState(false);
+  const [checkUserLocked] = useLazyQuery(USER_LOCKED_QUERY, {
+    client,
+    fetchPolicy: 'no-cache'
+  });
+
   const [getHolders, { data: holdersData, loading: holdersLoading, error: holdersError }] = useLazyQuery(HOLDERS_QUERY, {
     client,
     fetchPolicy: 'no-cache'
@@ -30,7 +40,6 @@ export default function WalletQuery() {
   const DEFAULT_VISIBLE = 10;
   const EXPANDED_VISIBLE = 100;
 
-  // Reset visible entries when switching views
   const toggleView = () => {
     setIsViewingSubscribers(!isViewingSubscribers);
     setVisibleHolders(DEFAULT_VISIBLE);
@@ -59,7 +68,6 @@ export default function WalletQuery() {
   const processUserData = (users: User[] | undefined, field: 'balance' | 'totalSubscribed') => {
     if (!users) return [];
 
-    // Filter out entries with zero balance and sort by amount
     return users
       .filter(user => {
         const amount = user[field];
@@ -102,7 +110,6 @@ export default function WalletQuery() {
   };
 
   const downloadCSV = (headers: string[], rows: string[][], filename: string) => {
-    // Properly escape and quote CSV values
     const escapeCsvValue = (value: string) => {
       if (value.includes(',') || value.includes('"') || value.includes('\n')) {
         return `"${value.replace(/"/g, '""')}"`;
@@ -130,6 +137,29 @@ export default function WalletQuery() {
     getHolders();
     getSubscribers();
   }, [getHolders, getSubscribers]);
+
+  useEffect(() => {
+    const checkEligibility = async () => {
+      if (isConnected && address) {
+        try {
+          const { data } = await checkUserLocked({
+            variables: { user: address.toLowerCase() }
+          });
+          
+          const totalSubscribed = data?.agentKeyUsers?.[0]?.totalSubscribed || '0';
+          const eligible = parseFloat(totalSubscribed) / 1e18 >= 25000;
+          setIsEligible(eligible);
+        } catch (error) {
+          console.error('Error checking eligibility:', error);
+          setIsEligible(false);
+        }
+      } else {
+        setIsEligible(false);
+      }
+    };
+
+    checkEligibility();
+  }, [isConnected, address, checkUserLocked]);
 
   const getCurrentData = () => {
     if (isViewingSubscribers) {
@@ -173,6 +203,33 @@ export default function WalletQuery() {
         </div>
       </div>
 
+      <div className="bg-gray-800 p-4 md:p-6 rounded-lg mb-6">
+        <div className="text-center mb-4">
+          <h3 className="text-lg md:text-xl font-semibold text-white mb-2">Want to Export Your Own Project Data?</h3>
+          <p className="text-gray-300 text-sm md:text-base">
+            Connect your wallet with 25,000 locked DNXS tokens to export CSV files of your project&apos;s holders and subscribers.
+          </p>
+        </div>
+        {!isConnected ? (
+          <button
+            onClick={() => open()}
+            className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold mx-auto block"
+          >
+            Connect Wallet
+          </button>
+        ) : (
+          <div className="text-center">
+            {isEligible ? (
+              <p className="text-green-500 text-sm md:text-base">✓ You can now export your project&apos;s data</p>
+            ) : (
+              <p className="text-yellow-500 text-sm md:text-base">
+                ⚠️ You need 25,000 DNXS tokens locked to export your project&apos;s data
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 mb-6">
         <h1 className="text-2xl md:text-3xl font-bold">
           {isViewingSubscribers ? 'DNXS Subscribers' : 'DNXS Holders'}
@@ -191,7 +248,7 @@ export default function WalletQuery() {
               onClick={exportToCSV}
               className="px-4 sm:px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold text-sm sm:text-base"
             >
-              Export CSV
+              Export DNXS {isViewingSubscribers ? 'Subscribers' : 'Holders'} CSV
             </button>
           )}
         </div>
