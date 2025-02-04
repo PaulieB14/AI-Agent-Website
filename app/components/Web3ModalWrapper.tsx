@@ -1,23 +1,10 @@
 'use client';
 
-import { WagmiConfig, createConfig, configureChains } from "wagmi";
+import { WagmiConfig } from "wagmi";
 import { createWeb3Modal } from "@web3modal/wagmi/react";
-import { w3mConnectors } from '@web3modal/ethereum';
-import { base, mainnet } from "wagmi/chains";
-import { publicProvider } from 'wagmi/providers/public';
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-const projectId = 'c4f79cc821944f9680842a551b7a0777';
-const chains = [base, mainnet];
-
-const { publicClient } = configureChains(chains, [publicProvider()]);
-
-const wagmiConfig = createConfig({
-  autoConnect: true,
-  connectors: w3mConnectors({ projectId, chains }),
-  publicClient
-});
+import { wagmiConfig, chains, projectId, web3ModalConfig } from './web3config';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,23 +20,31 @@ export default function Web3ModalWrapper({ children }: { children: React.ReactNo
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    try {
-      createWeb3Modal({
-        wagmiConfig,
-        projectId,
-        chains,
-        defaultChain: base,
-        themeMode: 'dark',
-        tokens: {
-          [base.id]: {
-            address: '0x4aaba1b66a9a3e3053343ec11beeec2d205904df' as `0x${string}`,
-            image: 'https://avatars.githubusercontent.com/u/37784886'
+    if (typeof window !== 'undefined') {
+      try {
+        createWeb3Modal({
+          wagmiConfig,
+          projectId,
+          chains,
+          defaultChain: chains[0],
+          ...web3ModalConfig,
+          themeMode: 'dark',
+          tokens: {
+            [chains[0].id]: {
+              address: '0x4aaba1b66a9a3e3053343ec11beeec2d205904df' as `0x${string}`,
+              image: 'https://avatars.githubusercontent.com/u/37784886'
+            }
           }
+        });
+        console.log('Web3Modal initialized successfully');
+        setMounted(true);
+      } catch (error) {
+        console.error('Failed to initialize Web3Modal:', error);
+        if (error instanceof Error) {
+          console.error('Error details:', error.message);
+          console.error('Error stack:', error.stack);
         }
-      });
-      setMounted(true);
-    } catch (error) {
-      console.error('Failed to initialize Web3Modal:', error);
+      }
     }
   }, []);
 

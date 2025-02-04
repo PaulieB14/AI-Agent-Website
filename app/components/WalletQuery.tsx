@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useLazyQuery } from '@apollo/client';
 import { useAccount } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
+import { useWeb3ModalState } from '@web3modal/wagmi/react';
 import client from '../apolloClient';
 import { HOLDERS_QUERY, SUBSCRIBERS_QUERY, USER_LOCKED_QUERY } from '../queries';
 
@@ -17,6 +18,13 @@ interface User {
 export default function WalletQuery() {
   const { address, isConnected } = useAccount();
   const { open } = useWeb3Modal();
+  const { open: isOpen } = useWeb3ModalState();
+
+  useEffect(() => {
+    if (isOpen) {
+      console.log('Web3Modal is open');
+    }
+  }, [isOpen]);
   const [isEligible, setIsEligible] = useState(false);
   const [checkUserLocked] = useLazyQuery(USER_LOCKED_QUERY, {
     client,
@@ -142,12 +150,20 @@ export default function WalletQuery() {
     const checkEligibility = async () => {
       if (isConnected && address) {
         try {
+          console.log('Checking eligibility for address:', address);
           const { data } = await checkUserLocked({
-            variables: { user: address.toLowerCase() }
+            variables: { 
+              user: address.toLowerCase()
+            }
           });
           
           const totalSubscribed = data?.agentKeyUsers?.[0]?.totalSubscribed || '0';
-          const eligible = parseFloat(totalSubscribed) / 1e18 >= 25000;
+          const totalSubscribedInDNXS = parseFloat(totalSubscribed) / 1e18;
+          console.log('Total subscribed DNXS:', totalSubscribedInDNXS);
+          
+          const eligible = totalSubscribedInDNXS >= 10000;
+          console.log('Is eligible:', eligible);
+          
           setIsEligible(eligible);
         } catch (error) {
           console.error('Error checking eligibility:', error);
@@ -207,12 +223,15 @@ export default function WalletQuery() {
         <div className="text-center mb-4">
           <h3 className="text-lg md:text-xl font-semibold text-white mb-2">Want to Export Your Own Project Data?</h3>
           <p className="text-gray-300 text-sm md:text-base">
-            Connect your wallet with 25,000 locked DNXS tokens to export CSV files of your project&apos;s holders and subscribers.
+            Connect your wallet with 10,000 locked DNXS tokens to export CSV files of your project&apos;s holders and subscribers.
           </p>
         </div>
         {!isConnected ? (
           <button
-            onClick={() => open()}
+            onClick={() => {
+              console.log('Opening Web3Modal');
+              open();
+            }}
             className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold mx-auto block"
           >
             Connect Wallet
@@ -223,7 +242,7 @@ export default function WalletQuery() {
               <p className="text-green-500 text-sm md:text-base">✓ You can now export your project&apos;s data</p>
             ) : (
               <p className="text-yellow-500 text-sm md:text-base">
-                ⚠️ You need 25,000 DNXS tokens locked to export your project&apos;s data
+                ⚠️ You need 10,000 DNXS tokens locked to export your project&apos;s data
               </p>
             )}
           </div>

@@ -23,8 +23,13 @@ export const SUBSCRIBERS_QUERY = gql`
 `;
 
 export const USER_LOCKED_QUERY = gql`
-  query GetUserLocked($user: String!) {
-    agentKeyUsers(where: { id_contains: $user }) {
+  query UserLocked($user: String!) {
+    agentKeyUsers(
+      where: {
+        user: $user,
+        agentKey: "0x4aaba1b66a9a3e3053343ec11beeec2d205904df"
+      }
+    ) {
       totalSubscribed
     }
   }
