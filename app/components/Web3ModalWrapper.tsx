@@ -1,17 +1,16 @@
 'use client';
 
-import { WagmiConfig, createConfig, mainnet } from "wagmi";
+import { WagmiConfig, createConfig, configureChains } from "wagmi";
 import { createWeb3Modal } from "@web3modal/wagmi/react";
-import { base } from "wagmi/chains";
+import { w3mConnectors } from '@web3modal/ethereum';
+import { base, mainnet } from "wagmi/chains";
+import { publicProvider } from 'wagmi/providers/public';
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { configureChains } from 'wagmi';
-import { publicProvider } from 'wagmi/providers/public';
-import { w3mConnectors } from '@web3modal/ethereum';
 
 const projectId = 'c4f79cc821944f9680842a551b7a0777';
-
 const chains = [base, mainnet];
+
 const { publicClient } = configureChains(chains, [publicProvider()]);
 
 const wagmiConfig = createConfig({
