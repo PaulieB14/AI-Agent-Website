@@ -193,12 +193,21 @@ export default function WalletQuery() {
       console.log('Query variables:', { user: userAddress });
       console.log('Query response:', data);
       
-      const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed;
-      if (!totalSubscribed) {
+      // Find user with matching address
+      const userSubscriptions = data?.agentKey?.users || [];
+      console.log('User subscriptions:', userSubscriptions);
+
+      if (!userSubscriptions.length) {
         console.log('No subscription found for wallet');
         setIsEligible(false);
         return;
       }
+
+      // Sum up all subscriptions for this user
+      const totalSubscribed = userSubscriptions.reduce((sum: string, user: { totalSubscribed: string }) => {
+        return (BigInt(sum) + BigInt(user.totalSubscribed || '0')).toString();
+      }, '0');
+      console.log('Raw subscription amount:', totalSubscribed);
 
       // Compare raw values using BigInt
       const isEligible = BigInt(totalSubscribed) >= BigInt("10000000000000000000000"); // 10,000 DNXS in raw value
@@ -321,7 +330,10 @@ export default function WalletQuery() {
               variables: { user: formattedAddress }
             });
 
-            const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed;
+            const userSubscriptions = data?.agentKey?.users || [];
+            const totalSubscribed = userSubscriptions.reduce((sum: string, user: { totalSubscribed: string }) => {
+              return (BigInt(sum) + BigInt(user.totalSubscribed || '0')).toString();
+            }, '0');
             
             setQueryResult({
               totalSubscribed: totalSubscribed || '0'
