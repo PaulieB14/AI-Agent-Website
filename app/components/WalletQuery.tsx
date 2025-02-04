@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLazyQuery } from '@apollo/client';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import client from '../apolloClient';
-import { HOLDERS_QUERY, SUBSCRIBERS_QUERY, CHECK_SUBSCRIPTION_QUERY } from '../queries';
+import { CHECK_SUBSCRIPTION_QUERY } from '../queries'; // Ensure the correct import here
 
 interface User {
   id: string;
@@ -15,8 +15,9 @@ interface User {
 }
 
 export default function WalletQuery() {
-  const { address, isConnected } = useAccount();
-  const [isEligible, setIsEligible] = useState<boolean | null>(null);
+  const { address, isConnected } = useAccount(); // Wallet connection state
+  const [isEligible, setIsEligible] = useState<boolean | null>(null); // Eligibility state
+  const [subscriptionData, setSubscriptionData] = useState<string | null>(null); // Store subscription data
 
   const [checkSubscription] = useLazyQuery(CHECK_SUBSCRIPTION_QUERY, {
     client,
@@ -25,183 +26,55 @@ export default function WalletQuery() {
       console.log('Query completed with data:', data);
     },
     onError: (error) => {
-      console.error('Query error:', error);
-    }
+      console.error('Error during subscription check:', error);
+      setIsEligible(false); // In case of error, mark as ineligible
+    },
   });
 
-  const [getHolders, { data: holdersData, loading: holdersLoading, error: holdersError, refetch: refetchHolders }] = useLazyQuery(HOLDERS_QUERY, {
-    client,
-    fetchPolicy: 'network-only'
-  });
-
-  const [getSubscribers, { data: subscribersData, loading: subscribersLoading, error: subscribersError, refetch: refetchSubscribers }] = useLazyQuery(SUBSCRIBERS_QUERY, {
-    client,
-    fetchPolicy: 'network-only'
-  });
-
-  const [visibleHolders, setVisibleHolders] = useState(10);
-  const [visibleSubscribers, setVisibleSubscribers] = useState(10);
-  const [isViewingSubscribers, setIsViewingSubscribers] = useState(false);
-  const [queryAddress, setQueryAddress] = useState('');
-  const [queryResult, setQueryResult] = useState<{balance?: string, totalSubscribed?: string} | null>(null);
-
-  const DEFAULT_VISIBLE = 10;
-  const EXPANDED_VISIBLE = 100;
-
-  const toggleView = () => {
-    setIsViewingSubscribers(!isViewingSubscribers);
-    setVisibleHolders(DEFAULT_VISIBLE);
-    setVisibleSubscribers(DEFAULT_VISIBLE);
-  };
-
+  // Format Gwei to DNXS readable value
   const formatGwei = (value: string | undefined): string => {
     if (!value) return '0.000';
     const num = parseFloat(value) / 1e18;
     return num.toLocaleString('en-US', {
       minimumFractionDigits: 3,
-      maximumFractionDigits: 3
+      maximumFractionDigits: 3,
     });
   };
 
-  const AGENT_KEY = '0x4aaba1b66a9a3e3053343ec11beeec2d205904df'.toLowerCase();
-
-  const processUserData = (users: User[] | undefined, field: 'balance' | 'totalSubscribed') => {
-    if (!users) return [];
-
-    return users
-      .filter(user => {
-        const amount = user[field];
-        return amount && parseFloat(amount) > 0;
-      })
-      .map(user => {
-        const [, walletAddress] = user.id.split('-');
-        return {
-          ...user,
-          id: user.id,
-          displayId: walletAddress || user.id
-        };
-      })
-      .sort((a, b) => {
-        const aValue = parseFloat(a[field] || '0');
-        const bValue = parseFloat(b[field] || '0');
-        return bValue - aValue;
-      });
-  };
-
-  const getAllData = () => {
-    if (isViewingSubscribers) {
-      return processUserData(subscribersData?.agentKey?.users, 'totalSubscribed');
-    } else {
-      return processUserData(holdersData?.agentKey?.users, 'balance');
-    }
-  };
-
-  const exportToCSV = () => {
-    const data = getAllData();
-    if (!data.length) return;
-    
-    const headers = ['Wallet Address', 'Amount'];
-    const rows: string[][] = data.map((user: User) => [
-      user.displayId,
-      formatGwei(isViewingSubscribers ? user.totalSubscribed : user.balance)
-    ]);
-    
-    downloadCSV(headers, rows, isViewingSubscribers ? 'dnxs_subscribers.csv' : 'dnxs_holders.csv');
-  };
-
-  const downloadCSV = (headers: string[], rows: string[][], filename: string) => {
-    const escapeCsvValue = (value: string) => {
-      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-        return `"${value.replace(/"/g, '""')}"`;
-      }
-      return value;
-    };
-
-    const csvContent = [
-      headers.map(escapeCsvValue).join(','),
-      ...rows.map(row => row.map(escapeCsvValue).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (isViewingSubscribers) {
-          await getSubscribers();
-          await refetchSubscribers();
-        } else {
-          await getHolders();
-          await refetchHolders();
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-    
-    fetchData();
-  }, [getHolders, getSubscribers, isViewingSubscribers, refetchHolders, refetchSubscribers]);
-
-  // Refetch when visible count changes
-  useEffect(() => {
-    const refetchData = async () => {
-      try {
-        if (isViewingSubscribers) {
-          await refetchSubscribers();
-        } else {
-          await refetchHolders();
-        }
-      } catch (error) {
-        console.error('Error refetching data:', error);
-      }
-    };
-    
-    refetchData();
-  }, [visibleHolders, visibleSubscribers, isViewingSubscribers, refetchHolders, refetchSubscribers]);
-
+  // Function to check if the user is eligible
   const checkEligibility = async () => {
     if (!isConnected || !address) {
+      console.log("Wallet not connected or address not found.");
       setIsEligible(false);
       return;
     }
 
+    console.log("Wallet connected with address:", address);
+
     try {
-      const userAddress = address.toLowerCase();
+      const userAddress = address.toLowerCase(); // Ensure the address is lowercase
       console.log('Checking eligibility for address:', userAddress);
-      
+
       const { data } = await checkSubscription({
-        variables: { user: userAddress }
+        variables: { user: userAddress },
       });
 
       console.log('Query variables:', { user: userAddress });
       console.log('Query response:', data);
-      
-      const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed;
-      if (!totalSubscribed) {
-        console.log('No subscription found for wallet');
-        setIsEligible(false);
-        return;
-      }
+
+      const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed || '0';
       console.log('Raw subscription amount:', totalSubscribed);
 
-      // Compare raw values using BigInt
-      const isEligible = BigInt(totalSubscribed) >= BigInt("10000000000000000000000"); // 10,000 DNXS in raw value
-      
+      // Compare raw values using BigInt for precision
+      const isEligible = BigInt(totalSubscribed) >= BigInt('10000000000000000000000'); // 10,000 DNXS in raw value
+
       // Convert to human-readable DNXS for logging
       const subscribedDNXS = Number(BigInt(totalSubscribed)) / 1e18;
       console.log('Found subscription:', subscribedDNXS.toFixed(3), 'DNXS');
       console.log('Required amount: 10,000 DNXS');
       console.log('Eligible:', isEligible);
-      
+
+      setSubscriptionData(totalSubscribed);
       setIsEligible(isEligible);
     } catch (error) {
       console.error('Error checking eligibility:', error);
@@ -209,42 +82,13 @@ export default function WalletQuery() {
     }
   };
 
-  const getCurrentData = () => {
-    if (isViewingSubscribers) {
-      const filtered = processUserData(subscribersData?.agentKey?.users, 'totalSubscribed');
-      console.log('Subscribers data:', filtered.length, 'Visible count:', visibleSubscribers);
-      // When expanded, show all data
-      if (visibleSubscribers === DEFAULT_VISIBLE) {
-        return filtered.slice(0, DEFAULT_VISIBLE);
-      }
-      return filtered;
-    } else {
-      const filtered = processUserData(holdersData?.agentKey?.users, 'balance');
-      console.log('Holders data:', filtered.length, 'Visible count:', visibleHolders);
-      // When expanded, show all data
-      if (visibleHolders === DEFAULT_VISIBLE) {
-        return filtered.slice(0, DEFAULT_VISIBLE);
-      }
-      return filtered;
+  // Check eligibility once wallet is connected
+  useEffect(() => {
+    if (isConnected && address) {
+      console.log("Auto-checking eligibility for connected wallet:", address);
+      checkEligibility();
     }
-  };
-
-  const toggleVisibleEntries = () => {
-    if (isViewingSubscribers) {
-      const newCount = visibleSubscribers === DEFAULT_VISIBLE ? Number.MAX_SAFE_INTEGER : DEFAULT_VISIBLE;
-      console.log('Toggling subscribers visible count to:', newCount);
-      setVisibleSubscribers(newCount);
-    } else {
-      const newCount = visibleHolders === DEFAULT_VISIBLE ? Number.MAX_SAFE_INTEGER : DEFAULT_VISIBLE;
-      console.log('Toggling holders visible count to:', newCount);
-      setVisibleHolders(newCount);
-    }
-  };
-
-  const currentVisibleCount = isViewingSubscribers ? visibleSubscribers : visibleHolders;
-  const totalCount = isViewingSubscribers 
-    ? processUserData(subscribersData?.agentKey?.users, 'totalSubscribed').length 
-    : processUserData(holdersData?.agentKey?.users, 'balance').length;
+  }, [isConnected, address]);
 
   return (
     <div className="text-center py-8 md:py-10 px-4">
@@ -260,33 +104,33 @@ export default function WalletQuery() {
           </div>
           <div className="text-center md:text-left">
             <p className="text-base md:text-lg font-bold text-gray-400">Agent Key:</p>
-            <p className="text-xs md:text-sm text-white break-all">{AGENT_KEY}</p>
+            <p className="text-xs md:text-sm text-white break-all">{address}</p>
           </div>
         </div>
       </div>
 
       <div className="bg-gray-800 p-4 md:p-6 rounded-lg mb-6">
         <div className="text-center mb-4">
-          <h3 className="text-lg md:text-xl font-semibold text-white mb-2">Want to Export Project Data?</h3>
+          <h3 className="text-lg md:text-xl font-semibold text-white mb-2">Want to Export Your Own Project Data?</h3>
           <p className="text-gray-300 text-sm md:text-base">
             Connect your wallet and check if you have enough DNXS subscribed (10,000 minimum) to export project data.
           </p>
         </div>
         <div className="flex flex-col items-center gap-4">
-          {!isConnected ? (
-            <div className="flex justify-center">
-              <ConnectButton />
-            </div>
-          ) : (
-            <>
+          <div className="flex justify-center">
+            <ConnectButton />
+          </div>
+          {isConnected && (
+            <div className="flex flex-col items-center gap-4">
               <button
                 onClick={checkEligibility}
                 className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
               >
-                Check Subscription Amount
+                Check Eligibility
               </button>
               {isEligible !== null && (
                 <div className="text-center">
+                  <p className="text-gray-300 mb-2">Your subscription amount: {formatGwei(subscriptionData || '0')} DNXS</p>
                   {isEligible ? (
                     <p className="text-green-500 text-sm md:text-base">✓ You have enough DNXS subscribed to export data</p>
                   ) : (
@@ -296,7 +140,7 @@ export default function WalletQuery() {
                   )}
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -308,31 +152,32 @@ export default function WalletQuery() {
             Enter a wallet address to view its DNXS holdings and subscriptions
           </p>
         </div>
-        <form onSubmit={async (e: FormEvent) => {
-          e.preventDefault();
-          if (!queryAddress) return;
-          
-          try {
-            const formattedAddress = queryAddress.toLowerCase();
-            const { data } = await checkSubscription({
-              variables: { user: formattedAddress }
-            });
+        {/* Query wallet address form */}
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!address) return;
 
-            const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed;
-            
-            setQueryResult({
-              totalSubscribed: totalSubscribed || '0'
-            });
-          } catch (error) {
-            console.error('Error querying wallet:', error);
-            setQueryResult(null);
-          }
-        }} className="flex flex-col sm:flex-row gap-3">
+            try {
+              console.log('Querying wallet:', address);
+              const { data } = await checkSubscription({
+                variables: { user: address.toLowerCase() },
+              });
+
+              const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed || '0';
+              console.log('Queried subscription amount for wallet:', totalSubscribed);
+
+              setSubscriptionData(totalSubscribed);
+            } catch (error) {
+              console.error('Error querying wallet:', error);
+            }
+          }}
+          className="flex flex-col sm:flex-row gap-3"
+        >
           <input
             type="text"
-            value={queryAddress}
-            onChange={(e) => setQueryAddress(e.target.value)}
-            placeholder="Enter wallet address (0x...)"
+            value={address || ''}
+            readOnly
             className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
@@ -342,104 +187,7 @@ export default function WalletQuery() {
             Query Wallet
           </button>
         </form>
-        {queryResult && (
-          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-            <div>
-              <p className="text-gray-400 font-semibold mb-2">DNXS Subscription Amount:</p>
-              <p className="text-white text-lg">{formatGwei(queryResult.totalSubscribed)} DNXS</p>
-              {queryResult.totalSubscribed && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-400">Required for data export: 10,000 DNXS</p>
-                  <p className={`text-sm mt-1 ${BigInt(queryResult.totalSubscribed) >= BigInt("10000000000000000000000") ? "text-green-500" : "text-yellow-500"}`}>
-                    {BigInt(queryResult.totalSubscribed) >= BigInt("10000000000000000000000") 
-                      ? "✓ Has enough DNXS subscribed to export data"
-                      : "❌ Not enough DNXS subscribed to export data"}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold">
-          {isViewingSubscribers ? 'DNXS Subscribers' : 'DNXS Holders'}
-        </h1>
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <button
-            type="button"
-            onClick={toggleView}
-            className="px-4 sm:px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold text-sm sm:text-base"
-          >
-            View {isViewingSubscribers ? 'Holders' : 'Subscribers'}
-          </button>
-          {getCurrentData().length > 0 && (
-            <button
-              type="button"
-              onClick={exportToCSV}
-              className="px-4 sm:px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold text-sm sm:text-base"
-            >
-              Export DNXS {isViewingSubscribers ? 'Subscribers' : 'Holders'} CSV
-            </button>
-          )}
-        </div>
-      </div>
-
-      {(holdersLoading || subscribersLoading) && (
-        <div className="flex items-center justify-center gap-2 text-gray-600">
-          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <span>Loading...</span>
-        </div>
-      )}
-      
-      {(holdersError || subscribersError) && (
-        <div className="text-red-500 mt-4">
-          <p>Error: {holdersError?.message || subscribersError?.message || 'An error occurred'}</p>
-          <p className="text-sm mt-2">Please try again later.</p>
-        </div>
-      )}
-
-      <div className="bg-white bg-opacity-5 rounded-lg overflow-hidden shadow-md mb-6">
-        <div className={`overflow-auto ${currentVisibleCount > DEFAULT_VISIBLE ? 'max-h-[800px]' : 'max-h-[500px]'}`}>
-          <table className="w-full">
-            <thead className="sticky top-0 bg-gray-800">
-              <tr className="bg-white bg-opacity-10">
-                <th className="px-4 py-3 text-left text-gray-300">#</th>
-                <th className="px-4 py-3 text-left text-gray-300">
-                  {isViewingSubscribers ? 'Total Subscribed' : 'Tokens'}
-                </th>
-                <th className="px-4 py-3 text-left text-gray-300">Wallet Address</th>
-              </tr>
-            </thead>
-            <tbody>
-              {getCurrentData().map((user: User, index: number) => (
-                <tr key={user.id} className="border-t border-white border-opacity-10">
-                  <td className="px-4 py-3 text-gray-400">{index + 1}</td>
-                  <td className="px-4 py-3">
-                    {formatGwei(isViewingSubscribers ? user.totalSubscribed : user.balance)}
-                  </td>
-                  <td className="px-4 py-3 text-sm">{user.displayId}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {totalCount > DEFAULT_VISIBLE && (
-        <button
-          className="mt-4 px-4 sm:px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold text-sm sm:text-base"
-          onClick={toggleVisibleEntries}
-        >
-          {currentVisibleCount === DEFAULT_VISIBLE 
-            ? `Show More (${Math.min(EXPANDED_VISIBLE, totalCount)})`
-            : 'Show Less'}
-        </button>
-      )}
     </div>
   );
 }
