@@ -64,4 +64,3 @@ export default function Web3ModalWrapper({ children }: { children: React.ReactNo
     </WagmiConfig>
   );
 }
-}
