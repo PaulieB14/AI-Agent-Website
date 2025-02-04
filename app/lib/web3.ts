@@ -1,18 +1,32 @@
-import { configureChains, createConfig } from 'wagmi'
+import { createConfig } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
-import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum'
+import { EthereumClient } from '@web3modal/ethereum'
+import { createWeb3Modal } from '@web3modal/wagmi/react'
+import { http } from 'viem'
 
 // Temporary project ID for development - replace with real one in production
 export const projectId = 'c4f79cc821944f9680842a551b7a0777';
 
-const chains = [mainnet]
-
-const { publicClient } = configureChains(chains, [w3mProvider({ projectId })])
+const metadata = {
+  name: 'My Website',
+  description: 'My Web3 Website',
+  url: 'https://mywebsite.com', // TODO: Replace with your website URL
+  icons: ['https://avatars.githubusercontent.com/u/37784886']
+}
 
 export const wagmiConfig = createConfig({
-  autoConnect: true,
-  connectors: w3mConnectors({ projectId, chains }),
-  publicClient
+  chains: [mainnet],
+  transports: {
+    [mainnet.id]: http()
+  }
 })
 
-export const ethereumClient = new EthereumClient(wagmiConfig, chains)
+createWeb3Modal({
+  wagmiConfig,
+  projectId,
+  defaultChain: mainnet,
+  themeMode: 'dark',
+  ...metadata
+})
+
+export const ethereumClient = new EthereumClient(wagmiConfig, [mainnet])
