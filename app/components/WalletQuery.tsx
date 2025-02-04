@@ -31,14 +31,14 @@ export default function WalletQuery() {
     fetchPolicy: 'no-cache'
   });
 
-  const [getHolders, { data: holdersData, loading: holdersLoading, error: holdersError }] = useLazyQuery(HOLDERS_QUERY, {
+  const [getHolders, { data: holdersData, loading: holdersLoading, error: holdersError, refetch: refetchHolders }] = useLazyQuery(HOLDERS_QUERY, {
     client,
-    fetchPolicy: 'no-cache'
+    fetchPolicy: 'network-only'
   });
 
-  const [getSubscribers, { data: subscribersData, loading: subscribersLoading, error: subscribersError }] = useLazyQuery(SUBSCRIBERS_QUERY, {
+  const [getSubscribers, { data: subscribersData, loading: subscribersLoading, error: subscribersError, refetch: refetchSubscribers }] = useLazyQuery(SUBSCRIBERS_QUERY, {
     client,
-    fetchPolicy: 'no-cache'
+    fetchPolicy: 'network-only'
   });
 
   const [visibleHolders, setVisibleHolders] = useState(10);
@@ -142,9 +142,39 @@ export default function WalletQuery() {
   };
 
   useEffect(() => {
-    getHolders();
-    getSubscribers();
-  }, [getHolders, getSubscribers]);
+    const fetchData = async () => {
+      try {
+        if (isViewingSubscribers) {
+          await getSubscribers();
+          await refetchSubscribers();
+        } else {
+          await getHolders();
+          await refetchHolders();
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    
+    fetchData();
+  }, [getHolders, getSubscribers, isViewingSubscribers, refetchHolders, refetchSubscribers]);
+
+  // Refetch when visible count changes
+  useEffect(() => {
+    const refetchData = async () => {
+      try {
+        if (isViewingSubscribers) {
+          await refetchSubscribers();
+        } else {
+          await refetchHolders();
+        }
+      } catch (error) {
+        console.error('Error refetching data:', error);
+      }
+    };
+    
+    refetchData();
+  }, [visibleHolders, visibleSubscribers, isViewingSubscribers, refetchHolders, refetchSubscribers]);
 
   useEffect(() => {
     const checkEligibility = async () => {
@@ -180,18 +210,32 @@ export default function WalletQuery() {
   const getCurrentData = () => {
     if (isViewingSubscribers) {
       const filtered = processUserData(subscribersData?.agentKey?.users, 'totalSubscribed');
-      return filtered.slice(0, visibleSubscribers);
+      console.log('Subscribers data:', filtered.length, 'Visible count:', visibleSubscribers);
+      // When expanded, show all data
+      if (visibleSubscribers > DEFAULT_VISIBLE) {
+        return filtered;
+      }
+      return filtered.slice(0, DEFAULT_VISIBLE);
     } else {
       const filtered = processUserData(holdersData?.agentKey?.users, 'balance');
-      return filtered.slice(0, visibleHolders);
+      console.log('Holders data:', filtered.length, 'Visible count:', visibleHolders);
+      // When expanded, show all data
+      if (visibleHolders > DEFAULT_VISIBLE) {
+        return filtered;
+      }
+      return filtered.slice(0, DEFAULT_VISIBLE);
     }
   };
 
   const toggleVisibleEntries = () => {
     if (isViewingSubscribers) {
-      setVisibleSubscribers(visibleSubscribers === DEFAULT_VISIBLE ? EXPANDED_VISIBLE : DEFAULT_VISIBLE);
+      const newCount = visibleSubscribers === DEFAULT_VISIBLE ? Number.MAX_SAFE_INTEGER : DEFAULT_VISIBLE;
+      console.log('Toggling subscribers visible count to:', newCount);
+      setVisibleSubscribers(newCount);
     } else {
-      setVisibleHolders(visibleHolders === DEFAULT_VISIBLE ? EXPANDED_VISIBLE : DEFAULT_VISIBLE);
+      const newCount = visibleHolders === DEFAULT_VISIBLE ? Number.MAX_SAFE_INTEGER : DEFAULT_VISIBLE;
+      console.log('Toggling holders visible count to:', newCount);
+      setVisibleHolders(newCount);
     }
   };
 
@@ -291,7 +335,7 @@ export default function WalletQuery() {
       )}
 
       <div className="bg-white bg-opacity-5 rounded-lg overflow-hidden shadow-md mb-6">
-        <div className="max-h-[500px] overflow-auto">
+        <div className={`overflow-auto ${currentVisibleCount > DEFAULT_VISIBLE ? 'max-h-[800px]' : 'max-h-[500px]'}`}>
           <table className="w-full">
             <thead className="sticky top-0 bg-gray-800">
               <tr className="bg-white bg-opacity-10">

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useBalance } from 'wagmi';
-import { dnxsToken } from './web3config';
+import { useAccount } from 'wagmi';
 import { formatNumber } from '../utils/format';
 
 interface DataDisplayProps {
@@ -23,14 +22,6 @@ export default function DataDisplay({
   const [showSubscribers, setShowSubscribers] = useState(false);
   const [newAgentId, setNewAgentId] = useState('');
   const { address, isConnected } = useAccount();
-  const { data: balance } = useBalance({
-    address,
-    token: dnxsToken.address,
-    chainId: dnxsToken.chainId,
-  });
-
-  const isEligible = balance && balance.value >= BigInt('10000000000000000000000'); // 10000 with 18 decimals
-
   // Filter out duplicates and zero amounts
   const uniqueHolders = holders
     .filter(holder => parseFloat(holder.amount) > 0)
@@ -42,6 +33,13 @@ export default function DataDisplay({
   const nonZeroSubscribers = subscribers
     .filter(sub => parseFloat(sub.amount) > 0)
     .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
+
+  // Check if address exists in holders or subscribers with sufficient amount
+  const holderAmount = uniqueHolders.find(h => h.address.toLowerCase() === address?.toLowerCase())?.amount || '0';
+  const subscriberAmount = nonZeroSubscribers.find(s => s.address.toLowerCase() === address?.toLowerCase())?.amount || '0';
+  const totalAmount = parseFloat(holderAmount) + parseFloat(subscriberAmount);
+  
+  const isEligible = totalAmount >= 10000;
   
   const displayedHolders = showAllHolders ? uniqueHolders : uniqueHolders.slice(0, 10);
   const displayedSubscribers = showAllSubscribers ? nonZeroSubscribers : nonZeroSubscribers.slice(0, 10);
