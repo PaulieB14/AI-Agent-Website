@@ -192,20 +192,21 @@ export default function WalletQuery() {
           console.log('Query response:', {
             data,
             error,
-            agentKeyUsers: data?.agentKeyUsers,
-            firstUser: data?.agentKeyUsers?.[0]
+            agentKeyUsers: data?.agentKeyUsers
           });
           
-          const totalSubscribed = data?.agentKeyUsers?.[0]?.totalSubscribed || '0';
-          console.log('Raw totalSubscribed value:', totalSubscribed);
+          console.log('Full query response:', JSON.stringify(data, null, 2));
           
-          // Compare raw values (in wei) to handle large numbers accurately
-          const minRequired = "10000000000000000000000"; // 10,000 DNXS in wei
-          const eligible = BigInt(totalSubscribed) >= BigInt(minRequired);
+          // User is eligible if they appear in the results (since query filters for >=10000 DNXS)
+          const eligible = data?.agentKeyUsers?.length > 0;
           
-          // Convert to DNXS for logging
-          const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
-          console.log('Is eligible:', eligible, `Required: 10,000 DNXS, Current Subscribed: ${subscribedDNXS.toFixed(3)} DNXS`);
+          if (eligible) {
+            const totalSubscribed = data.agentKeyUsers[0].totalSubscribed;
+            const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
+            console.log('Found eligible subscription:', subscribedDNXS.toFixed(3), 'DNXS');
+          } else {
+            console.log('No eligible subscription found for wallet');
+          }
           
           setIsEligible(eligible);
         } catch (error) {

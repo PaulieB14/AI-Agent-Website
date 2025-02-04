@@ -27,7 +27,8 @@ export const USER_LOCKED_QUERY = gql`
     agentKeyUsers(
       where: {
         user: $user,
-        agentKey: "0x4aaba1b66a9a3e3053343ec11beeec2d205904df"
+        agentKey: "0x4aaba1b66a9a3e3053343ec11beeec2d205904df",
+        totalSubscribed_gte: "10000000000000000000000"
       }
     ) {
       totalSubscribed
