@@ -29,7 +29,7 @@ export default function DataDisplay({
     chainId: dnxsToken.chainId,
   });
 
-  const isEligible = balance && parseFloat(balance.formatted) >= 25000;
+  const isEligible = balance && balance.value >= BigInt('10000000000000000000000'); // 10000 with 18 decimals
 
   // Filter out duplicates and zero amounts
   const uniqueHolders = holders
@@ -100,11 +100,11 @@ export default function DataDisplay({
       <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
         <h3 className="text-2xl font-bold mb-4">Want to Export Your Own Project Data?</h3>
         <p className="text-gray-300/90 text-lg leading-relaxed mb-4">
-          Connect your wallet with 25,000 locked DNXS tokens to export CSV files of your project&apos;s holders and subscribers.
+          Connect your wallet with 10,000 locked DNXS tokens to export CSV files of your project&apos;s holders and subscribers.
         </p>
         {isConnected && (
           <div className={`text-xl font-bold ${isEligible ? 'text-green-500 animate-pulse' : 'text-red-500'}`}>
-            {isEligible ? 'Eligible - Scroll to bottom' : 'Not Eligible - Need 25,000 DNXS'}
+            {isEligible ? 'Eligible - Scroll to bottom' : 'Not Eligible - Need 10,000 DNXS'}
           </div>
         )}
       </div>
