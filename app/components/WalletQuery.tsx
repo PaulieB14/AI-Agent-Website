@@ -200,7 +200,10 @@ export default function WalletQuery() {
         return;
       }
 
-      const isEligible = BigInt(totalSubscribed) >= BigInt("10000000000000000000000"); // 10,000 DNXS
+      // Compare raw values using BigInt
+      const isEligible = BigInt(totalSubscribed) >= BigInt("10000000000000000000000"); // 10,000 DNXS in raw value
+      
+      // Convert to human-readable DNXS for logging
       const subscribedDNXS = Number(BigInt(totalSubscribed)) / 1e18;
       console.log('Found subscription:', subscribedDNXS.toFixed(3), 'DNXS');
       console.log('Required amount: 10,000 DNXS');
@@ -313,20 +316,15 @@ export default function WalletQuery() {
           if (!queryAddress) return;
           
           try {
-            const [holdersResult, subscribersResult] = await Promise.all([
-              getHolders(),
-              getSubscribers()
-            ]);
-            
             const formattedAddress = queryAddress.toLowerCase();
-            const holdersData = processUserData(holdersResult.data?.agentKey?.users, 'balance')
-              .find(user => user.displayId.toLowerCase() === formattedAddress);
-            const subscribersData = processUserData(subscribersResult.data?.agentKey?.users, 'totalSubscribed')
-              .find(user => user.displayId.toLowerCase() === formattedAddress);
+            const { data } = await checkUserLocked({
+              variables: { user: formattedAddress }
+            });
+
+            const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed;
             
             setQueryResult({
-              balance: holdersData?.balance,
-              totalSubscribed: subscribersData?.totalSubscribed
+              totalSubscribed: totalSubscribed || '0'
             });
           } catch (error) {
             console.error('Error querying wallet:', error);
@@ -349,15 +347,16 @@ export default function WalletQuery() {
         </form>
         {queryResult && (
           <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-gray-400 font-semibold">DNXS Balance:</p>
-                <p className="text-white">{formatGwei(queryResult.balance)} DNXS</p>
-              </div>
-              <div>
-                <p className="text-gray-400 font-semibold">Total Subscribed:</p>
-                <p className="text-white">{formatGwei(queryResult.totalSubscribed)} DNXS</p>
-              </div>
+            <div>
+              <p className="text-gray-400 font-semibold mb-2">Total Subscribed:</p>
+              <p className="text-white text-lg">{formatGwei(queryResult.totalSubscribed)} DNXS</p>
+              {queryResult.totalSubscribed && (
+                <p className="text-sm text-gray-400 mt-1">
+                  {BigInt(queryResult.totalSubscribed) >= BigInt("10000000000000000000000") 
+                    ? "✓ Eligible for data export"
+                    : "❌ Not eligible for data export (requires 10,000 DNXS)"}
+                </p>
+              )}
             </div>
           </div>
         )}
