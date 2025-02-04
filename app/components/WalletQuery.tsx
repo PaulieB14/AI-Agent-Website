@@ -5,7 +5,7 @@ import { useLazyQuery } from '@apollo/client';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import client from '../apolloClient';
-import { HOLDERS_QUERY, SUBSCRIBERS_QUERY, USER_LOCKED_QUERY } from '../queries';
+import { HOLDERS_QUERY, SUBSCRIBERS_QUERY, CHECK_SUBSCRIPTION_QUERY } from '../queries';
 
 interface User {
   id: string;
@@ -18,7 +18,7 @@ export default function WalletQuery() {
   const { address, isConnected } = useAccount();
   const [isEligible, setIsEligible] = useState<boolean | null>(null);
 
-  const [checkUserLocked] = useLazyQuery(USER_LOCKED_QUERY, {
+  const [checkSubscription] = useLazyQuery(CHECK_SUBSCRIPTION_QUERY, {
     client,
     fetchPolicy: 'no-cache',
     onCompleted: (data) => {
@@ -178,7 +178,7 @@ export default function WalletQuery() {
       const userAddress = address.toLowerCase();
       console.log('Checking eligibility for address:', userAddress);
       
-      const { data } = await checkUserLocked({
+      const { data } = await checkSubscription({
         variables: { user: userAddress }
       });
 
@@ -267,9 +267,9 @@ export default function WalletQuery() {
 
       <div className="bg-gray-800 p-4 md:p-6 rounded-lg mb-6">
         <div className="text-center mb-4">
-          <h3 className="text-lg md:text-xl font-semibold text-white mb-2">Want to Export Your Own Project Data?</h3>
+          <h3 className="text-lg md:text-xl font-semibold text-white mb-2">Want to Export Project Data?</h3>
           <p className="text-gray-300 text-sm md:text-base">
-            Connect your wallet with 10,000 locked DNXS tokens to export CSV files of your project&apos;s holders and subscribers.
+            Connect your wallet and check if you have enough DNXS subscribed (10,000 minimum) to export project data.
           </p>
         </div>
         <div className="flex flex-col items-center gap-4">
@@ -283,15 +283,15 @@ export default function WalletQuery() {
                 onClick={checkEligibility}
                 className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
               >
-                See If You&apos;re Eligible
+                Check Subscription Amount
               </button>
               {isEligible !== null && (
                 <div className="text-center">
                   {isEligible ? (
-                    <p className="text-green-500 text-sm md:text-base">✓ You can now export your project&apos;s data</p>
+                    <p className="text-green-500 text-sm md:text-base">✓ You have enough DNXS subscribed to export data</p>
                   ) : (
                     <p className="text-yellow-500 text-sm md:text-base">
-                      ⚠️ You need 10,000 DNXS tokens locked to export your project&apos;s data
+                      ⚠️ You need 10,000 DNXS subscribed to export data
                     </p>
                   )}
                 </div>
@@ -314,7 +314,7 @@ export default function WalletQuery() {
           
           try {
             const formattedAddress = queryAddress.toLowerCase();
-            const { data } = await checkUserLocked({
+            const { data } = await checkSubscription({
               variables: { user: formattedAddress }
             });
 
@@ -345,14 +345,17 @@ export default function WalletQuery() {
         {queryResult && (
           <div className="mt-4 p-4 bg-gray-700 rounded-lg">
             <div>
-              <p className="text-gray-400 font-semibold mb-2">Total Subscribed:</p>
+              <p className="text-gray-400 font-semibold mb-2">DNXS Subscription Amount:</p>
               <p className="text-white text-lg">{formatGwei(queryResult.totalSubscribed)} DNXS</p>
               {queryResult.totalSubscribed && (
-                <p className="text-sm text-gray-400 mt-1">
-                  {BigInt(queryResult.totalSubscribed) >= BigInt("10000000000000000000000") 
-                    ? "✓ Eligible for data export"
-                    : "❌ Not eligible for data export (requires 10,000 DNXS)"}
-                </p>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-400">Required for data export: 10,000 DNXS</p>
+                  <p className={`text-sm mt-1 ${BigInt(queryResult.totalSubscribed) >= BigInt("10000000000000000000000") ? "text-green-500" : "text-yellow-500"}`}>
+                    {BigInt(queryResult.totalSubscribed) >= BigInt("10000000000000000000000") 
+                      ? "✓ Has enough DNXS subscribed to export data"
+                      : "❌ Not enough DNXS subscribed to export data"}
+                  </p>
+                </div>
               )}
             </div>
           </div>

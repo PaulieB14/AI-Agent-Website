@@ -22,8 +22,8 @@ export const SUBSCRIBERS_QUERY = gql`
   }
 `;
 
-export const USER_LOCKED_QUERY = gql`
-  query UserLocked($user: String!) {
+export const CHECK_SUBSCRIPTION_QUERY = gql`
+  query CheckSubscription($user: String!) {
     agentKeyUsers(
       where: { user: $user, agentKey: "0x4aaba1b66a9a3e3053343ec11beeec2d205904df" }
     ) {
