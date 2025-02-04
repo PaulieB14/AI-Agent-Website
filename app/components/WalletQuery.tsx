@@ -16,7 +16,7 @@ interface User {
 
 export default function WalletQuery() {
   const { address, isConnected } = useAccount();
-  const [isEligible, setIsEligible] = useState(false);
+  const [isEligible, setIsEligible] = useState<boolean | null>(null);
 
   const [checkUserLocked] = useLazyQuery(USER_LOCKED_QUERY, {
     client,
@@ -28,14 +28,6 @@ export default function WalletQuery() {
       console.error('Query error:', error);
     }
   });
-
-  // Auto-check eligibility when wallet connects
-  useEffect(() => {
-    if (isConnected && address) {
-      console.log('Auto-checking eligibility for connected wallet:', address);
-      checkEligibility();
-    }
-  }, [isConnected, address]);
 
   const [getHolders, { data: holdersData, loading: holdersLoading, error: holdersError, refetch: refetchHolders }] = useLazyQuery(HOLDERS_QUERY, {
     client,
@@ -193,20 +185,12 @@ export default function WalletQuery() {
       console.log('Query variables:', { user: userAddress });
       console.log('Query response:', data);
       
-      // Find user with matching address
-      const userSubscriptions = data?.agentKey?.users || [];
-      console.log('User subscriptions:', userSubscriptions);
-
-      if (!userSubscriptions.length) {
+      const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed;
+      if (!totalSubscribed) {
         console.log('No subscription found for wallet');
         setIsEligible(false);
         return;
       }
-
-      // Sum up all subscriptions for this user
-      const totalSubscribed = userSubscriptions.reduce((sum: string, user: { totalSubscribed: string }) => {
-        return (BigInt(sum) + BigInt(user.totalSubscribed || '0')).toString();
-      }, '0');
       console.log('Raw subscription amount:', totalSubscribed);
 
       // Compare raw values using BigInt
@@ -288,29 +272,33 @@ export default function WalletQuery() {
             Connect your wallet with 10,000 locked DNXS tokens to export CSV files of your project&apos;s holders and subscribers.
           </p>
         </div>
-        {!isConnected ? (
-          <div className="flex justify-center">
-            <ConnectButton />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            <button
-              onClick={checkEligibility}
-              className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
-            >
-              Check Eligibility
-            </button>
-            <div className="text-center">
-              {isEligible ? (
-                <p className="text-green-500 text-sm md:text-base">✓ You can now export your project&apos;s data</p>
-              ) : (
-                <p className="text-yellow-500 text-sm md:text-base">
-                  ⚠️ You need 10,000 DNXS tokens locked to export your project&apos;s data
-                </p>
-              )}
+        <div className="flex flex-col items-center gap-4">
+          {!isConnected ? (
+            <div className="flex justify-center">
+              <ConnectButton />
             </div>
-          </div>
-        )}
+          ) : (
+            <>
+              <button
+                onClick={checkEligibility}
+                className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
+              >
+                See If You&apos;re Eligible
+              </button>
+              {isEligible !== null && (
+                <div className="text-center">
+                  {isEligible ? (
+                    <p className="text-green-500 text-sm md:text-base">✓ You can now export your project&apos;s data</p>
+                  ) : (
+                    <p className="text-yellow-500 text-sm md:text-base">
+                      ⚠️ You need 10,000 DNXS tokens locked to export your project&apos;s data
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="bg-gray-800 p-4 md:p-6 rounded-lg mb-6">
@@ -330,10 +318,7 @@ export default function WalletQuery() {
               variables: { user: formattedAddress }
             });
 
-            const userSubscriptions = data?.agentKey?.users || [];
-            const totalSubscribed = userSubscriptions.reduce((sum: string, user: { totalSubscribed: string }) => {
-              return (BigInt(sum) + BigInt(user.totalSubscribed || '0')).toString();
-            }, '0');
+            const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed;
             
             setQueryResult({
               totalSubscribed: totalSubscribed || '0'
