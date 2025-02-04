@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { useLazyQuery } from '@apollo/client';
 import { useAccount } from 'wagmi';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
@@ -44,6 +44,8 @@ export default function WalletQuery() {
   const [visibleHolders, setVisibleHolders] = useState(10);
   const [visibleSubscribers, setVisibleSubscribers] = useState(10);
   const [isViewingSubscribers, setIsViewingSubscribers] = useState(false);
+  const [queryAddress, setQueryAddress] = useState('');
+  const [queryResult, setQueryResult] = useState<{balance?: string, totalSubscribed?: string} | null>(null);
 
   const DEFAULT_VISIBLE = 10;
   const EXPANDED_VISIBLE = 100;
@@ -176,50 +178,47 @@ export default function WalletQuery() {
     refetchData();
   }, [visibleHolders, visibleSubscribers, isViewingSubscribers, refetchHolders, refetchSubscribers]);
 
-  useEffect(() => {
-    const checkEligibility = async () => {
-      if (isConnected && address) {
-        try {
-          const userAddress = address.toLowerCase();
-          console.log('Checking eligibility for address:', userAddress);
-          
-          const { data, error } = await checkUserLocked({
-            variables: { 
-              user: userAddress
-            }
-          });
-          
-          console.log('Query response:', {
-            data,
-            error,
-            agentKeyUsers: data?.agentKeyUsers
-          });
-          
-          console.log('Full query response:', JSON.stringify(data, null, 2));
-          
-          // User is eligible if they appear in the results (since query filters for >=10000 DNXS)
-          const eligible = data?.agentKeyUsers?.length > 0;
-          
-          if (eligible) {
-            const totalSubscribed = data.agentKeyUsers[0].totalSubscribed;
-            const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
-            console.log('Found eligible subscription:', subscribedDNXS.toFixed(3), 'DNXS');
-          } else {
-            console.log('No eligible subscription found for wallet');
-          }
-          
-          setIsEligible(eligible);
-        } catch (error) {
-          console.error('Error checking eligibility:', error);
-          setIsEligible(false);
-        }
-      } else {
-        setIsEligible(false);
-      }
-    };
+  const checkEligibility = async () => {
+    if (!isConnected || !address) {
+      setIsEligible(false);
+      return;
+    }
 
-    checkEligibility();
-  }, [isConnected, address, checkUserLocked]);
+    try {
+      const userAddress = address.toLowerCase();
+      console.log('Checking eligibility for address:', userAddress);
+      
+      const { data, error } = await checkUserLocked({
+        variables: { 
+          user: userAddress
+        }
+      });
+      
+      console.log('Query response:', {
+        data,
+        error,
+        agentKeyUsers: data?.agentKeyUsers
+      });
+      
+      console.log('Full query response:', JSON.stringify(data, null, 2));
+      
+      // User is eligible if they appear in the results (since query filters for >=10000 DNXS)
+      const eligible = data?.agentKeyUsers?.length > 0;
+      
+      if (eligible) {
+        const totalSubscribed = data.agentKeyUsers[0].totalSubscribed;
+        const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
+        console.log('Found eligible subscription:', subscribedDNXS.toFixed(3), 'DNXS');
+      } else {
+        console.log('No eligible subscription found for wallet');
+      }
+      
+      setIsEligible(eligible);
+    } catch (error) {
+      console.error('Error checking eligibility:', error);
+      setIsEligible(false);
+    }
+  };
 
   const getCurrentData = () => {
     if (isViewingSubscribers) {
@@ -285,24 +284,95 @@ export default function WalletQuery() {
           </p>
         </div>
         {!isConnected ? (
-          <button
-            onClick={() => {
-              console.log('Opening Web3Modal');
-              open();
-            }}
-            className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold mx-auto block"
-          >
-            Connect Wallet
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => {
+                console.log('Opening Web3Modal');
+                open();
+              }}
+              className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
+            >
+              Connect Wallet
+            </button>
+          </div>
         ) : (
-          <div className="text-center">
-            {isEligible ? (
-              <p className="text-green-500 text-sm md:text-base">✓ You can now export your project&apos;s data</p>
-            ) : (
-              <p className="text-yellow-500 text-sm md:text-base">
-                ⚠️ You need 10,000 DNXS tokens locked to export your project&apos;s data
-              </p>
-            )}
+          <div className="flex flex-col items-center gap-4">
+            <button
+              onClick={checkEligibility}
+              className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
+            >
+              Check Eligibility
+            </button>
+            <div className="text-center">
+              {isEligible ? (
+                <p className="text-green-500 text-sm md:text-base">✓ You can now export your project&apos;s data</p>
+              ) : (
+                <p className="text-yellow-500 text-sm md:text-base">
+                  ⚠️ You need 10,000 DNXS tokens locked to export your project&apos;s data
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-gray-800 p-4 md:p-6 rounded-lg mb-6">
+        <div className="text-center mb-4">
+          <h3 className="text-lg md:text-xl font-semibold text-white mb-2">Query Specific Wallet</h3>
+          <p className="text-gray-300 text-sm md:text-base">
+            Enter a wallet address to view its DNXS holdings and subscriptions
+          </p>
+        </div>
+        <form onSubmit={async (e: FormEvent) => {
+          e.preventDefault();
+          if (!queryAddress) return;
+          
+          try {
+            const [holdersResult, subscribersResult] = await Promise.all([
+              getHolders(),
+              getSubscribers()
+            ]);
+            
+            const holdersData = processUserData(holdersResult.data?.agentKey?.users, 'balance')
+              .find(user => user.id.toLowerCase() === queryAddress.toLowerCase());
+            const subscribersData = processUserData(subscribersResult.data?.agentKey?.users, 'totalSubscribed')
+              .find(user => user.id.toLowerCase() === queryAddress.toLowerCase());
+            
+            setQueryResult({
+              balance: holdersData?.balance,
+              totalSubscribed: subscribersData?.totalSubscribed
+            });
+          } catch (error) {
+            console.error('Error querying wallet:', error);
+            setQueryResult(null);
+          }
+        }} className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            value={queryAddress}
+            onChange={(e) => setQueryAddress(e.target.value)}
+            placeholder="Enter wallet address (0x...)"
+            className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
+          >
+            Query Wallet
+          </button>
+        </form>
+        {queryResult && (
+          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-gray-400 font-semibold">DNXS Balance:</p>
+                <p className="text-white">{formatGwei(queryResult.balance)} DNXS</p>
+              </div>
+              <div>
+                <p className="text-gray-400 font-semibold">Total Subscribed:</p>
+                <p className="text-white">{formatGwei(queryResult.totalSubscribed)} DNXS</p>
+              </div>
+            </div>
           </div>
         )}
       </div>
