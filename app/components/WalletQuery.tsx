@@ -180,19 +180,28 @@ export default function WalletQuery() {
     const checkEligibility = async () => {
       if (isConnected && address) {
         try {
-          console.log('Checking eligibility for address:', address);
-          const { data } = await checkUserLocked({
+          const userAddress = address.toLowerCase();
+          console.log('Checking eligibility for address:', userAddress);
+          
+          const { data, error } = await checkUserLocked({
             variables: { 
-              user: address.toLowerCase()
+              user: userAddress
             }
           });
           
-          const totalSubscribed = data?.agentKeyUsers?.[0]?.totalSubscribed || '0';
-          const totalSubscribedInDNXS = parseFloat(totalSubscribed) / 1e18;
-          console.log('Total subscribed DNXS:', totalSubscribedInDNXS);
+          console.log('Query response:', {
+            data,
+            error,
+            agentKeyUsers: data?.agentKeyUsers,
+            firstUser: data?.agentKeyUsers?.[0]
+          });
           
-          const eligible = totalSubscribedInDNXS >= 10000;
-          console.log('Is eligible:', eligible);
+          const totalSubscribed = data?.agentKeyUsers?.[0]?.totalSubscribed || '0';
+          const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
+          console.log('Total Subscribed DNXS:', subscribedDNXS, 'Raw value:', totalSubscribed);
+          
+          const eligible = subscribedDNXS >= 10000;
+          console.log('Is eligible:', eligible, `Required: 10000 DNXS, Current Subscribed: ${subscribedDNXS.toFixed(3)} DNXS`);
           
           setIsEligible(eligible);
         } catch (error) {
