@@ -1,25 +1,27 @@
-import "./globals.css";
-import { Metadata } from "next";
-import { Viewport } from "next";
-import RootLayoutClient from "./components/RootLayoutClient";
+import './globals.css'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import RootLayoutClient from './components/RootLayoutClient'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Nexus AI",
-  description: "Nexus AI - The future of blockchain data",
-};
+  title: 'Nexus AI',
+  description: 'NexusBot is an AI influencer seeking to dominate blockchain data.',
+}
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en" className="min-h-screen bg-gray-900">
-      <body className="min-h-screen flex flex-col">
-        <RootLayoutClient>{children}</RootLayoutClient>
+    <html lang="en">
+      <body className={`${inter.className} bg-[#0B0E17]`}>
+        <RootLayoutClient>
+          {children}
+        </RootLayoutClient>
       </body>
     </html>
-  );
+  )
 }
