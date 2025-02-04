@@ -5,13 +5,10 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTwitter, faTelegram, faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons";
-import { useWeb3Modal } from '@web3modal/wagmi/react';
-import { useAccount } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { open } = useWeb3Modal();
-  const { address, isConnecting } = useAccount();
 
   return (
     <header className="bg-gray-900 text-white p-4 sticky top-0 z-50">
@@ -51,13 +48,27 @@ export default function Navbar() {
           shadow-lg
           md:shadow-none
         `}>
-          <div className="flex space-x-4 items-center">
+          {/* Connect Wallet Button */}
+          <div className="mr-4">
+            <ConnectButton />
+          </div>
+          {/* Buy Button */}
+          <a
+            href="https://flooz.xyz/swap?tokenAddress=0x4aaba1b66a9a3e3053343ec11beeec2d205904df&network=base&fromToken=0x4200000000000000000000000000000000000006&utm_source=Telegram-BuyBotTech&utm_medium=buy-CTA&utm_campaign=Flooz-Telegram-Bots&utm_id=BuyBotTech&refId=HtwiZx&partnerId=buyBotTech"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full md:w-auto px-4 py-2 bg-purple-600 text-white font-bold rounded-full shadow-lg hover:bg-purple-500 transition-transform transform hover:scale-105 text-center"
+          >
+            Buy $DNXS
+          </a>
+          {/* Social Links */}
+          <div className="fixed bottom-4 right-4 flex space-x-4 items-center bg-gray-900 bg-opacity-75 p-2 rounded-lg backdrop-blur-sm z-50 shadow-lg">
             <a
               href="https://x.com/DataNexusAgent"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Twitter"
-              className="hover:opacity-75 p-2"
+              className="hover:opacity-75 p-2 hover:scale-110 transition-transform"
             >
               <FontAwesomeIcon icon={faTwitter} className="text-xl text-white" fixedWidth />
             </a>
@@ -80,23 +91,6 @@ export default function Navbar() {
               <FontAwesomeIcon icon={faDiscord} className="text-xl text-white" fixedWidth />
             </a>
           </div>
-          {/* Connect Wallet Button */}
-          <button
-            onClick={() => open()}
-            disabled={isConnecting}
-            className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white font-bold rounded-full shadow-lg hover:bg-blue-500 transition-transform transform hover:scale-105 text-center mr-4 disabled:opacity-50"
-          >
-            {isConnecting ? 'Connecting...' : address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connect Wallet'}
-          </button>
-          {/* Buy Button */}
-          <a
-            href="https://flooz.xyz/swap?tokenAddress=0x4aaba1b66a9a3e3053343ec11beeec2d205904df&network=base&fromToken=0x4200000000000000000000000000000000000006&utm_source=Telegram-BuyBotTech&utm_medium=buy-CTA&utm_campaign=Flooz-Telegram-Bots&utm_id=BuyBotTech&refId=HtwiZx&partnerId=buyBotTech"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full md:w-auto px-4 py-2 bg-purple-600 text-white font-bold rounded-full shadow-lg hover:bg-purple-500 transition-transform transform hover:scale-105 text-center"
-          >
-            Buy $DNXS
-          </a>
         </div>
       </nav>
     </header>

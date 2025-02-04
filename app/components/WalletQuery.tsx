@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useLazyQuery } from '@apollo/client';
 import { useAccount } from 'wagmi';
-import { useWeb3Modal } from '@web3modal/wagmi/react';
-import { useWeb3ModalState } from '@web3modal/wagmi/react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import client from '../apolloClient';
 import { HOLDERS_QUERY, SUBSCRIBERS_QUERY, USER_LOCKED_QUERY } from '../queries';
 
@@ -17,15 +16,14 @@ interface User {
 
 export default function WalletQuery() {
   const { address, isConnected } = useAccount();
-  const { open } = useWeb3Modal();
-  const { open: isOpen } = useWeb3ModalState();
-
-  useEffect(() => {
-    if (isOpen) {
-      console.log('Web3Modal is open');
-    }
-  }, [isOpen]);
   const [isEligible, setIsEligible] = useState(false);
+
+  // Auto-check eligibility when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      checkEligibility();
+    }
+  }, [isConnected, address]);
   const [checkUserLocked] = useLazyQuery(USER_LOCKED_QUERY, {
     client,
     fetchPolicy: 'no-cache'
@@ -202,16 +200,12 @@ export default function WalletQuery() {
       
       console.log('Full query response:', JSON.stringify(data, null, 2));
       
-      // User is eligible if they appear in the results (since query filters for >=10000 DNXS)
-      const eligible = data?.agentKeyUsers?.length > 0;
+      const totalSubscribed = data?.agentKeyUsers?.[0]?.totalSubscribed;
+      const subscribedDNXS = totalSubscribed ? parseFloat(totalSubscribed) / 1e18 : 0;
+      const eligible = subscribedDNXS >= 10000;
       
-      if (eligible) {
-        const totalSubscribed = data.agentKeyUsers[0].totalSubscribed;
-        const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
-        console.log('Found eligible subscription:', subscribedDNXS.toFixed(3), 'DNXS');
-      } else {
-        console.log('No eligible subscription found for wallet');
-      }
+      console.log('Found subscription:', subscribedDNXS.toFixed(3), 'DNXS');
+      console.log('Eligible:', eligible, '(requires >= 10000 DNXS)');
       
       setIsEligible(eligible);
     } catch (error) {
@@ -225,18 +219,18 @@ export default function WalletQuery() {
       const filtered = processUserData(subscribersData?.agentKey?.users, 'totalSubscribed');
       console.log('Subscribers data:', filtered.length, 'Visible count:', visibleSubscribers);
       // When expanded, show all data
-      if (visibleSubscribers > DEFAULT_VISIBLE) {
-        return filtered;
+      if (visibleSubscribers === DEFAULT_VISIBLE) {
+        return filtered.slice(0, DEFAULT_VISIBLE);
       }
-      return filtered.slice(0, DEFAULT_VISIBLE);
+      return filtered;
     } else {
       const filtered = processUserData(holdersData?.agentKey?.users, 'balance');
       console.log('Holders data:', filtered.length, 'Visible count:', visibleHolders);
       // When expanded, show all data
-      if (visibleHolders > DEFAULT_VISIBLE) {
-        return filtered;
+      if (visibleHolders === DEFAULT_VISIBLE) {
+        return filtered.slice(0, DEFAULT_VISIBLE);
       }
-      return filtered.slice(0, DEFAULT_VISIBLE);
+      return filtered;
     }
   };
 
@@ -284,16 +278,8 @@ export default function WalletQuery() {
           </p>
         </div>
         {!isConnected ? (
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={() => {
-                console.log('Opening Web3Modal');
-                open();
-              }}
-              className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
-            >
-              Connect Wallet
-            </button>
+          <div className="flex justify-center">
+            <ConnectButton />
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
