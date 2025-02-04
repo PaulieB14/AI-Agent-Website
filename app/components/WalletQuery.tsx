@@ -201,11 +201,18 @@ export default function WalletQuery() {
       console.log('Full query response:', JSON.stringify(data, null, 2));
       
       const totalSubscribed = data?.agentKeyUsers?.[0]?.totalSubscribed;
-      const subscribedDNXS = totalSubscribed ? parseFloat(totalSubscribed) / 1e18 : 0;
+      if (!totalSubscribed) {
+        console.log('No subscription found for wallet');
+        setIsEligible(false);
+        return;
+      }
+
+      const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
       const eligible = subscribedDNXS >= 10000;
       
       console.log('Found subscription:', subscribedDNXS.toFixed(3), 'DNXS');
-      console.log('Eligible:', eligible, '(requires >= 10000 DNXS)');
+      console.log('Required amount: 10,000 DNXS');
+      console.log('Eligible:', eligible);
       
       setIsEligible(eligible);
     } catch (error) {
