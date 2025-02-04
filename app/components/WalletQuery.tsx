@@ -5,14 +5,7 @@ import { useLazyQuery } from '@apollo/client';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import client from '../apolloClient';
-import { CHECK_SUBSCRIPTION_QUERY } from '../queries'; // Ensure the correct import here
-
-interface User {
-  id: string;
-  balance?: string;
-  totalSubscribed?: string;
-  displayId: string;
-}
+import { CHECK_SUBSCRIPTION_QUERY } from '../queries';
 
 export default function WalletQuery() {
   const { address, isConnected } = useAccount(); // Wallet connection state
@@ -88,7 +81,7 @@ export default function WalletQuery() {
       console.log("Auto-checking eligibility for connected wallet:", address);
       checkEligibility();
     }
-  }, [isConnected, address]);
+  }, [isConnected, address]); // No need to add checkEligibility as a dependency
 
   return (
     <div className="text-center py-8 md:py-10 px-4">
