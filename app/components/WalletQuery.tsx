@@ -18,16 +18,24 @@ export default function WalletQuery() {
   const { address, isConnected } = useAccount();
   const [isEligible, setIsEligible] = useState(false);
 
+  const [checkUserLocked] = useLazyQuery(USER_LOCKED_QUERY, {
+    client,
+    fetchPolicy: 'no-cache',
+    onCompleted: (data) => {
+      console.log('Query completed with data:', data);
+    },
+    onError: (error) => {
+      console.error('Query error:', error);
+    }
+  });
+
   // Auto-check eligibility when wallet connects
   useEffect(() => {
     if (isConnected && address) {
+      console.log('Auto-checking eligibility for connected wallet:', address);
       checkEligibility();
     }
   }, [isConnected, address]);
-  const [checkUserLocked] = useLazyQuery(USER_LOCKED_QUERY, {
-    client,
-    fetchPolicy: 'no-cache'
-  });
 
   const [getHolders, { data: holdersData, loading: holdersLoading, error: holdersError, refetch: refetchHolders }] = useLazyQuery(HOLDERS_QUERY, {
     client,
@@ -63,15 +71,7 @@ export default function WalletQuery() {
     });
   };
 
-  const AGENT_KEY = '0x4aaba1b66a9a3e3053343ec11beeec2d205904df';
-
-  const extractWalletAddress = (fullAddress: string): string => {
-    const prefix = `${AGENT_KEY}-`;
-    if (fullAddress.startsWith(prefix)) {
-      return fullAddress.substring(prefix.length);
-    }
-    return fullAddress;
-  };
+  const AGENT_KEY = '0x4aaba1b66a9a3e3053343ec11beeec2d205904df'.toLowerCase();
 
   const processUserData = (users: User[] | undefined, field: 'balance' | 'totalSubscribed') => {
     if (!users) return [];
@@ -82,11 +82,11 @@ export default function WalletQuery() {
         return amount && parseFloat(amount) > 0;
       })
       .map(user => {
-        const walletAddress = extractWalletAddress(user.id);
+        const [, walletAddress] = user.id.split('-');
         return {
           ...user,
-          id: walletAddress,
-          displayId: walletAddress
+          id: user.id,
+          displayId: walletAddress || user.id
         };
       })
       .sort((a, b) => {
@@ -110,7 +110,7 @@ export default function WalletQuery() {
     
     const headers = ['Wallet Address', 'Amount'];
     const rows: string[][] = data.map((user: User) => [
-      user.id,
+      user.displayId,
       formatGwei(isViewingSubscribers ? user.totalSubscribed : user.balance)
     ]);
     
@@ -186,35 +186,27 @@ export default function WalletQuery() {
       const userAddress = address.toLowerCase();
       console.log('Checking eligibility for address:', userAddress);
       
-      const { data, error } = await checkUserLocked({
-        variables: { 
-          user: userAddress
-        }
+      const { data } = await checkUserLocked({
+        variables: { user: userAddress }
       });
+
+      console.log('Query variables:', { user: userAddress });
+      console.log('Query response:', data);
       
-      console.log('Query response:', {
-        data,
-        error,
-        agentKeyUsers: data?.agentKeyUsers
-      });
-      
-      console.log('Full query response:', JSON.stringify(data, null, 2));
-      
-      const totalSubscribed = data?.agentKeyUsers?.[0]?.totalSubscribed;
+      const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed;
       if (!totalSubscribed) {
         console.log('No subscription found for wallet');
         setIsEligible(false);
         return;
       }
 
-      const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
-      const eligible = subscribedDNXS >= 10000;
-      
+      const isEligible = BigInt(totalSubscribed) >= BigInt("10000000000000000000000"); // 10,000 DNXS
+      const subscribedDNXS = Number(BigInt(totalSubscribed)) / 1e18;
       console.log('Found subscription:', subscribedDNXS.toFixed(3), 'DNXS');
       console.log('Required amount: 10,000 DNXS');
-      console.log('Eligible:', eligible);
+      console.log('Eligible:', isEligible);
       
-      setIsEligible(eligible);
+      setIsEligible(isEligible);
     } catch (error) {
       console.error('Error checking eligibility:', error);
       setIsEligible(false);
@@ -326,10 +318,11 @@ export default function WalletQuery() {
               getSubscribers()
             ]);
             
+            const formattedAddress = queryAddress.toLowerCase();
             const holdersData = processUserData(holdersResult.data?.agentKey?.users, 'balance')
-              .find(user => user.id.toLowerCase() === queryAddress.toLowerCase());
+              .find(user => user.displayId.toLowerCase() === formattedAddress);
             const subscribersData = processUserData(subscribersResult.data?.agentKey?.users, 'totalSubscribed')
-              .find(user => user.id.toLowerCase() === queryAddress.toLowerCase());
+              .find(user => user.displayId.toLowerCase() === formattedAddress);
             
             setQueryResult({
               balance: holdersData?.balance,
