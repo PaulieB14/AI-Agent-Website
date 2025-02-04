@@ -197,11 +197,15 @@ export default function WalletQuery() {
           });
           
           const totalSubscribed = data?.agentKeyUsers?.[0]?.totalSubscribed || '0';
-          const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
-          console.log('Total Subscribed DNXS:', subscribedDNXS, 'Raw value:', totalSubscribed);
+          console.log('Raw totalSubscribed value:', totalSubscribed);
           
-          const eligible = subscribedDNXS >= 10000;
-          console.log('Is eligible:', eligible, `Required: 10000 DNXS, Current Subscribed: ${subscribedDNXS.toFixed(3)} DNXS`);
+          // Compare raw values (in wei) to handle large numbers accurately
+          const minRequired = "10000000000000000000000"; // 10,000 DNXS in wei
+          const eligible = BigInt(totalSubscribed) >= BigInt(minRequired);
+          
+          // Convert to DNXS for logging
+          const subscribedDNXS = parseFloat(totalSubscribed) / 1e18;
+          console.log('Is eligible:', eligible, `Required: 10,000 DNXS, Current Subscribed: ${subscribedDNXS.toFixed(3)} DNXS`);
           
           setIsEligible(eligible);
         } catch (error) {
