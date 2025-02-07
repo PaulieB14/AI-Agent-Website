@@ -5,7 +5,7 @@ import { createWeb3Modal } from '@web3modal/wagmi/react'
 import { http } from 'viem'
 
 // Temporary project ID for development - replace with real one in production
-export const projectId = 'c4f79cc821944f9680842a551b7a0777';
+const projectId = process.env.NEXT_PUBLIC_WEB3MODAL_PROJECT_ID || '';
 
 const metadata = {
   name: 'My Website',
