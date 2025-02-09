@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useLazyQuery } from '@apollo/client';
 import { formatNumber } from '../utils/format';
-import { FETCH_AGENT_INFO_QUERY, FETCH_AGENT_SUBSCRIBERS_QUERY } from '../lib/queries';
+import { FETCH_AGENT_USERS_QUERY, FETCH_AGENT_SUBSCRIBERS_QUERY } from '../lib/queries';
 import client from '../lib/apolloClient';
 
 interface DataDisplayProps {
@@ -48,33 +48,30 @@ export default function DataDisplay({
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fetchedAgentData, setFetchedAgentData] = useState<{
     agentKey: {
-      name: string;
-      totalSubscribed: string;
-      totalSubscribers: string;
-      ans: {
-        symbol: string;
-      };
       users: Array<{
         id: string;
-        totalSubscribed: string;
+        balance?: string;
+        totalSubscribed?: string;
         agentKey: {
           ans: {
             symbol: string;
           };
         };
       }>;
+      totalSubscribed?: string;
+      totalSubscribers?: string;
     };
   } | null>(null);
   const { address, isConnected } = useAccount();
 
-  const [fetchAgentInfo, { loading: fetchingInfo }] = useLazyQuery(FETCH_AGENT_INFO_QUERY, {
+  const [fetchAgentUsers, { loading: fetchingUsers }] = useLazyQuery(FETCH_AGENT_USERS_QUERY, {
     client,
     onCompleted: (data) => {
       if (data?.agentKey) {
         setFetchedAgentData(prev => ({
           agentKey: {
-            ...data.agentKey,
-            users: prev?.agentKey?.users || []
+            ...prev?.agentKey,
+            users: data.agentKey.users
           }
         }));
         setFetchError(null);
@@ -83,7 +80,7 @@ export default function DataDisplay({
       }
     },
     onError: (error) => {
-      console.error('Error fetching agent info:', error);
+      console.error('Error fetching agent users:', error);
       setFetchError(error.message);
       setFetchedAgentData(null);
     },
@@ -93,12 +90,14 @@ export default function DataDisplay({
     client,
     onCompleted: (data) => {
       if (data?.agentKey) {
-        setFetchedAgentData(prev => prev ? {
+        setFetchedAgentData(prev => ({
           agentKey: {
-            ...prev.agentKey,
-            users: data.agentKey.users
+            ...prev?.agentKey,
+            totalSubscribed: data.agentKey.totalSubscribed,
+            totalSubscribers: data.agentKey.totalSubscribers,
+            users: showFetchedSubscribers ? data.agentKey.users : (prev?.agentKey.users || [])
           }
-        } : null);
+        }));
       }
     },
     onError: (error) => {
@@ -107,13 +106,13 @@ export default function DataDisplay({
     },
   });
 
-  const fetchingAgentData = fetchingInfo || fetchingSubscribers;
+  const fetchingAgentData = fetchingUsers || fetchingSubscribers;
 
   const handleFetchAgentData = () => {
     if (newAgentId) {
       setFetchError(null);
       const trimmedKey = newAgentId.trim();
-      fetchAgentInfo({ variables: { agentKey: trimmedKey } });
+      fetchAgentUsers({ variables: { agentKey: trimmedKey } });
       fetchSubscribers({ variables: { agentKey: trimmedKey } });
     }
   };
@@ -138,8 +137,9 @@ export default function DataDisplay({
   const displayedHolders = showAllHolders ? uniqueHolders : uniqueHolders.slice(0, 10);
   const displayedSubscribers = showAllSubscribers ? nonZeroSubscribers : nonZeroSubscribers.slice(0, 10);
 
-  const currentSymbol = fetchedAgentData?.agentKey?.ans?.symbol || tokenSymbol;
+  const currentSymbol = fetchedAgentData?.agentKey?.users[0]?.agentKey?.ans?.symbol || tokenSymbol;
   const fetchedTotalSubscribed = `${formatNumber(fetchedAgentData?.agentKey?.totalSubscribed || '0')} ${currentSymbol}`;
+  const fetchedTotalSubscribers = fetchedAgentData?.agentKey?.totalSubscribers || '0';
 
   const handleExportHoldersCSV = () => {
     const holdersCsv = uniqueHolders.map(h => `${getId(h)},${formatNumber(getAmount(h)).replace(/,/g, '')}`).join('\n');
@@ -334,7 +334,7 @@ export default function DataDisplay({
                 </div>
                 <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
                   <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribers:</h3>
-                  <p className="text-3xl text-white font-semibold tracking-wide">{fetchedAgentData.agentKey.totalSubscribers}</p>
+                  <p className="text-3xl text-white font-semibold tracking-wide">{fetchedTotalSubscribers}</p>
                 </div>
                 <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
                   <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Agent Key:</h3>
@@ -349,14 +349,14 @@ export default function DataDisplay({
                   <button
                     onClick={() => {
                       const items = fetchedAgentData.agentKey.users;
-                      const csv = `Wallet Address,Amount\n${items.map((item: { id: string; totalSubscribed: string }) => 
+                      const csv = `Wallet Address,Amount\n${items.map(item => 
                         `${getId(item)},${formatNumber(getAmount(item)).replace(/,/g, '')}`
                       ).join('\n')}`;
                       const blob = new Blob([csv], { type: 'text/csv' });
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `${currentSymbol.toLowerCase()}-subscribers-${newAgentId}.csv`;
+                      a.download = `${currentSymbol.toLowerCase()}-${showFetchedSubscribers ? 'subscribers' : 'holders'}-${newAgentId}.csv`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
@@ -369,7 +369,10 @@ export default function DataDisplay({
                 </div>
                 <div className="flex justify-center gap-8">
                   <button
-                    onClick={() => setShowFetchedSubscribers(false)}
+                    onClick={() => {
+                      setShowFetchedSubscribers(false);
+                      fetchAgentUsers({ variables: { agentKey: newAgentId } });
+                    }}
                     className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
                       !showFetchedSubscribers 
                         ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
@@ -379,7 +382,10 @@ export default function DataDisplay({
                     View Holders
                   </button>
                   <button
-                    onClick={() => setShowFetchedSubscribers(true)}
+                    onClick={() => {
+                      setShowFetchedSubscribers(true);
+                      fetchSubscribers({ variables: { agentKey: newAgentId } });
+                    }}
                     className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
                       showFetchedSubscribers 
                         ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
