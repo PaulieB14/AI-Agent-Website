@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useLazyQuery } from '@apollo/client';
 import { formatNumber } from '../utils/format';
-import { FETCH_AGENT_DATA_QUERY } from '../lib/queries';
+import { FETCH_AGENT_INFO_QUERY, FETCH_AGENT_SUBSCRIBERS_QUERY } from '../lib/queries';
 import client from '../lib/apolloClient';
 
 interface DataDisplayProps {
@@ -17,6 +17,7 @@ interface DataDisplayProps {
   subscriptionData: string | null;
   isLoading?: boolean;
   error?: string | null;
+  tokenSymbol?: string;
 }
 
 type UnifiedDataItem = {
@@ -36,7 +37,8 @@ export default function DataDisplay({
   isEligible,
   subscriptionData,
   isLoading,
-  error
+  error,
+  tokenSymbol = 'DNXS'
 }: DataDisplayProps) {
   const [showAllHolders, setShowAllHolders] = useState(false);
   const [showAllSubscribers, setShowAllSubscribers] = useState(false);
@@ -46,45 +48,82 @@ export default function DataDisplay({
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fetchedAgentData, setFetchedAgentData] = useState<{
     agentKey: {
+      name: string;
       totalSubscribed: string;
       totalSubscribers: string;
-      users: Array<{ id: string; totalSubscribed: string }>;
+      ans: {
+        symbol: string;
+      };
+      users: Array<{
+        id: string;
+        totalSubscribed: string;
+        agentKey: {
+          ans: {
+            symbol: string;
+          };
+        };
+      }>;
     };
   } | null>(null);
   const { address, isConnected } = useAccount();
 
-  const [fetchAgentData, { loading: fetchingAgentData }] = useLazyQuery(FETCH_AGENT_DATA_QUERY, {
+  const [fetchAgentInfo, { loading: fetchingInfo }] = useLazyQuery(FETCH_AGENT_INFO_QUERY, {
     client,
     onCompleted: (data) => {
       if (data?.agentKey) {
-        setFetchedAgentData(data);
+        setFetchedAgentData(prev => ({
+          agentKey: {
+            ...data.agentKey,
+            users: prev?.agentKey?.users || []
+          }
+        }));
         setFetchError(null);
       } else {
         setFetchError('No data found for this agent key');
       }
     },
     onError: (error) => {
-      console.error('Error fetching agent data:', error);
+      console.error('Error fetching agent info:', error);
       setFetchError(error.message);
       setFetchedAgentData(null);
     },
   });
 
+  const [fetchSubscribers, { loading: fetchingSubscribers }] = useLazyQuery(FETCH_AGENT_SUBSCRIBERS_QUERY, {
+    client,
+    onCompleted: (data) => {
+      if (data?.agentKey) {
+        setFetchedAgentData(prev => prev ? {
+          agentKey: {
+            ...prev.agentKey,
+            users: data.agentKey.users
+          }
+        } : null);
+      }
+    },
+    onError: (error) => {
+      console.error('Error fetching subscribers:', error);
+      setFetchError(error.message);
+    },
+  });
+
+  const fetchingAgentData = fetchingInfo || fetchingSubscribers;
+
   const handleFetchAgentData = () => {
     if (newAgentId) {
       setFetchError(null);
-      fetchAgentData({ variables: { agentKey: newAgentId } });
+      const trimmedKey = newAgentId.trim();
+      fetchAgentInfo({ variables: { agentKey: trimmedKey } });
+      fetchSubscribers({ variables: { agentKey: trimmedKey } });
     }
   };
 
   const getAmount = (item: UnifiedDataItem) => item.balance || item.amount || item.totalSubscribed || '0';
   const getId = (item: UnifiedDataItem) => {
     const id = item.id || item.address || '';
-    // If the id contains a hyphen (agent key prefix), get the part after the hyphen
     return id.includes('-') ? id.split('-')[1] : id;
   };
 
-  // Filter out duplicates and zero amounts for DNXS data
   const uniqueHolders = holders
     .filter(holder => parseFloat(getAmount(holder)) > 0)
     .filter((holder, index, self) => 
@@ -99,8 +138,8 @@ export default function DataDisplay({
   const displayedHolders = showAllHolders ? uniqueHolders : uniqueHolders.slice(0, 10);
   const displayedSubscribers = showAllSubscribers ? nonZeroSubscribers : nonZeroSubscribers.slice(0, 10);
 
-  // Get total subscribed amount and add DNXS suffix
-  const fetchedTotalSubscribed = `${formatNumber(fetchedAgentData?.agentKey?.totalSubscribed || '0')} DNXS`;
+  const currentSymbol = fetchedAgentData?.agentKey?.ans?.symbol || tokenSymbol;
+  const fetchedTotalSubscribed = `${formatNumber(fetchedAgentData?.agentKey?.totalSubscribed || '0')} ${currentSymbol}`;
 
   const handleExportHoldersCSV = () => {
     const holdersCsv = uniqueHolders.map(h => `${getId(h)},${formatNumber(getAmount(h)).replace(/,/g, '')}`).join('\n');
@@ -110,7 +149,7 @@ export default function DataDisplay({
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `nexus-holders-${agentKey}.csv`;
+    a.download = `${currentSymbol.toLowerCase()}-holders-${agentKey}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -125,7 +164,7 @@ export default function DataDisplay({
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `nexus-subscribers-${agentKey}.csv`;
+    a.download = `${currentSymbol.toLowerCase()}-subscribers-${agentKey}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -158,12 +197,12 @@ export default function DataDisplay({
           </div>
         </div>
       )}
-      {/* DNXS Stats Section */}
+      {/* Stats Section */}
       <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribed:</h3>
-            <p className="text-3xl text-white font-semibold tracking-wide">{formatNumber(totalLocked)} DNXS</p>
+            <p className="text-3xl text-white font-semibold tracking-wide">{formatNumber(totalLocked)} {currentSymbol}</p>
           </div>
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribers:</h3>
@@ -180,18 +219,18 @@ export default function DataDisplay({
       <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
         <h3 className="text-2xl font-bold mb-4">Want to Export Your Own Project Data?</h3>
         <p className="text-gray-300/90 text-lg leading-relaxed mb-4">
-          Connect your wallet with 10,000 locked DNXS tokens to export CSV files of your project&apos;s holders and subscribers.
+          Connect your wallet with 10,000 locked tokens to export CSV files of your project&apos;s holders and subscribers.
         </p>
         {isConnected && (
           <>
             <div className={`text-xl font-bold ${isEligible ? 'text-green-500 animate-pulse' : 'text-red-500'}`}>
-              {isEligible ? 'Eligible - Scroll to bottom' : 'Not Eligible - Need 10,000 DNXS'}
+              {isEligible ? 'Eligible - Scroll to bottom' : `Not Eligible - Need 10,000 ${currentSymbol}`}
             </div>
             <div className="mt-2 text-gray-300">
               Connected Address: {address}
             </div>
             <div className="mt-1 text-gray-300">
-              Subscription Amount: {subscriptionData ? formatNumber(subscriptionData) : 'N/A'} DNXS
+              Subscription Amount: {subscriptionData ? formatNumber(subscriptionData) : 'N/A'} {currentSymbol}
             </div>
           </>
         )}
@@ -221,7 +260,7 @@ export default function DataDisplay({
         </button>
       </div>
 
-      {/* DNXS Data Section */}
+      {/* Data Section */}
       <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
           <div className="flex items-center gap-4">
@@ -255,7 +294,7 @@ export default function DataDisplay({
                   <tr key={index} className="hover:bg-[#1E2435]/80 transition-colors duration-150">
                     <td className="py-6 px-8 text-white">{index + 1}</td>
                     <td className="py-6 px-8 text-xs font-mono text-white break-all">{getId(item)}</td>
-                    <td className="py-6 px-8 text-white font-medium">{formatNumber(getAmount(item))}</td>
+                    <td className="py-6 px-8 text-white font-medium">{formatNumber(getAmount(item))} {currentSymbol}</td>
                   </tr>
                 ))}
               </tbody>
@@ -317,7 +356,7 @@ export default function DataDisplay({
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `subscribers-${newAgentId}.csv`;
+                      a.download = `${currentSymbol.toLowerCase()}-subscribers-${newAgentId}.csv`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
@@ -368,7 +407,7 @@ export default function DataDisplay({
                           <td className="py-6 px-8 text-white">{index + 1}</td>
                           <td className="py-6 px-8 text-xs font-mono text-white break-all">{getId(item)}</td>
                           <td className="py-6 px-8 text-white font-medium">
-                            {formatNumber(getAmount(item))}
+                            {formatNumber(getAmount(item))} {currentSymbol}
                           </td>
                         </tr>
                       ))}

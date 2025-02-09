@@ -36,14 +36,35 @@ export const CHECK_SUBSCRIPTION_QUERY = gql`
   }
 `;
 
-export const FETCH_AGENT_DATA_QUERY = gql`
-  query FetchAgentData($agentKey: String!) {
+export const FETCH_AGENT_INFO_QUERY = gql`
+  query FetchAgentInfo($agentKey: String!) {
     agentKey(id: $agentKey) {
+      name
       totalSubscribed
       totalSubscribers
-      users(first: 1000, orderBy: totalSubscribed, orderDirection: desc, where: { totalSubscribed_gt: "0" }) {
+      ans {
+        symbol
+      }
+    }
+  }
+`;
+
+export const FETCH_AGENT_SUBSCRIBERS_QUERY = gql`
+  query FetchAgentSubscribers($agentKey: String!) {
+    agentKey(id: $agentKey) {
+      users(
+        first: 1000
+        orderBy: totalSubscribed
+        orderDirection: desc
+        where: { totalSubscribed_gt: "0" }
+      ) {
         id
         totalSubscribed
+        agentKey {
+          ans {
+            symbol
+          }
+        }
       }
     }
   }

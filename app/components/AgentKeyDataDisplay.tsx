@@ -1,50 +1,75 @@
 import React, { useState } from 'react';
-import { useLazyQuery } from '@apollo/client';
-import { FETCH_AGENT_DATA_QUERY } from '../lib/queries';
+import { useLazyQuery, ApolloError } from '@apollo/client';
+import { FETCH_AGENT_INFO_QUERY, FETCH_AGENT_SUBSCRIBERS_QUERY } from '../lib/queries';
 import client from '../lib/apolloClient';
 import { formatNumber } from '../utils/format';
 
-interface Holder {
-  id: string;
-  balance: string;
+interface AgentInfoResponse {
+  agentKey: AgentInfo;
+}
+
+interface AgentSubscribersResponse {
+  agentKey: {
+    users: Subscriber[];
+  };
+}
+
+interface AgentInfo {
+  name: string;
+  totalSubscribed: string;
+  totalSubscribers: string;
+  ans: {
+    symbol: string;
+  };
 }
 
 interface Subscriber {
   id: string;
   totalSubscribed: string;
+  agentKey: {
+    ans: {
+      symbol: string;
+    };
+  };
 }
 
 const AgentKeyDataDisplay: React.FC = () => {
   const [agentKey, setAgentKey] = useState('');
-  const [holders, setHolders] = useState<Holder[]>([]);
+  const [agentInfo, setAgentInfo] = useState<AgentInfo | null>(null);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
-  const [showAllHolders, setShowAllHolders] = useState(false);
   const [showAllSubscribers, setShowAllSubscribers] = useState(false);
 
-  const [fetchAgentData, { loading, error }] = useLazyQuery(FETCH_AGENT_DATA_QUERY, {
+  const [fetchAgentInfo, { loading: infoLoading, error: infoError }] = useLazyQuery(FETCH_AGENT_INFO_QUERY, {
     client,
-    onCompleted: (data) => {
-      setHolders(data.agentKey.users);
-      setSubscribers(data.agentKey.users.filter((user: Subscriber) => parseFloat(user.totalSubscribed) > 0));
+    onCompleted: (data: AgentInfoResponse) => {
+      setAgentInfo(data.agentKey);
+    },
+  });
+
+  const [fetchSubscribers, { loading: subsLoading, error: subsError }] = useLazyQuery(FETCH_AGENT_SUBSCRIBERS_QUERY, {
+    client,
+    onCompleted: (data: AgentSubscribersResponse) => {
+      setSubscribers(data.agentKey.users);
     },
   });
 
   const handleFetchData = () => {
     if (agentKey.trim()) {
-      fetchAgentData({ variables: { agentKey: agentKey.trim() } });
+      const trimmedKey = agentKey.trim();
+      fetchAgentInfo({ variables: { agentKey: trimmedKey } });
+      fetchSubscribers({ variables: { agentKey: trimmedKey } });
     } else {
       console.error('Agent Key is required');
     }
   };
 
-  const handleExportCSV = (data: Holder[] | Subscriber[], filename: string) => {
+  const handleExportCSV = (data: Subscriber[], filename: string) => {
     const csv = [
       ['Wallet Address', 'Amount'],
-      ...data.map(item => {
-        const amount = 'balance' in item ? item.balance : item.totalSubscribed;
-        const wholeTokens = Math.floor(parseFloat(amount) / 1e18);
-        return [item.id.split('-').pop() || '', wholeTokens.toString()];
-      }),
+      ...data.map(item => [
+        item.id.split('-').pop() || '',
+        formatNumber(item.totalSubscribed)
+      ]),
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -60,8 +85,9 @@ const AgentKeyDataDisplay: React.FC = () => {
     }
   };
 
-  const displayedHolders = showAllHolders ? holders : holders.slice(0, 10);
   const displayedSubscribers = showAllSubscribers ? subscribers : subscribers.slice(0, 10);
+  const loading = infoLoading || subsLoading;
+  const error: ApolloError | undefined = infoError || subsError;
 
   return (
     <div className="mt-8 p-4 bg-gray-800 rounded-lg">
@@ -84,36 +110,22 @@ const AgentKeyDataDisplay: React.FC = () => {
         </div>
         {error && <p className="text-red-500">Error: {error.message}</p>}
         
-        {holders.length > 0 && (
+        {agentInfo && (
           <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Holders</h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleExportCSV(holders, 'holders')}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm"
-                >
-                  Export CSV
-                </button>
-                <button
-                  onClick={() => setShowAllHolders(!showAllHolders)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
-                >
-                  {showAllHolders ? 'Show Top 10' : 'Show All'}
-                </button>
+            <h2 className="text-xl font-bold mb-2">{agentInfo.name}</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-gray-400">Total Subscribed</p>
+                <p className="text-lg">{formatNumber(agentInfo.totalSubscribed)} {agentInfo.ans?.symbol || ''}</p>
+              </div>
+              <div>
+                <p className="text-gray-400">Total Subscribers</p>
+                <p className="text-lg">{agentInfo.totalSubscribers}</p>
               </div>
             </div>
-            <ul className="space-y-2">
-              {displayedHolders.map((holder, index) => (
-                <li key={index} className="flex justify-between items-center px-4 py-2 bg-gray-800 rounded">
-                  <span className="font-mono">{holder.id.split('-').pop()}</span>
-                  <span>{formatNumber(Math.floor(parseFloat(holder.balance) / 1e18).toString())} DNXS</span>
-                </li>
-              ))}
-            </ul>
           </div>
         )}
-        
+
         {subscribers.length > 0 && (
           <div className="mt-4 p-4 bg-gray-700 rounded-lg">
             <div className="flex justify-between items-center mb-4">
@@ -137,7 +149,7 @@ const AgentKeyDataDisplay: React.FC = () => {
               {displayedSubscribers.map((subscriber, index) => (
                 <li key={index} className="flex justify-between items-center px-4 py-2 bg-gray-800 rounded">
                   <span className="font-mono">{subscriber.id.split('-').pop()}</span>
-                  <span>{formatNumber(Math.floor(parseFloat(subscriber.totalSubscribed) / 1e18).toString())} DNXS</span>
+                  <span>{formatNumber(subscriber.totalSubscribed)} {subscriber.agentKey.ans?.symbol || ''}</span>
                 </li>
               ))}
             </ul>
