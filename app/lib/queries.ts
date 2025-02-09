@@ -18,7 +18,7 @@ export const SUBSCRIBERS_QUERY = gql`
     agentKey(id: $agentKey) {
       totalSubscribed
       totalSubscribers
-      users(first: 1000, orderBy: totalSubscribed, orderDirection: desc) {
+      users(first: 1000, orderBy: totalSubscribed, orderDirection: desc, where: { totalSubscribed_gt: "0" }) {
         id
         totalSubscribed
       }
