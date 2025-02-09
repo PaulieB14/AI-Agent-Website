@@ -259,7 +259,7 @@ export default function DataDisplay({
                   <tr key={index} className="hover:bg-[#1E2435]/80 transition-colors duration-150">
                     <td className="py-6 px-8 text-white">{index + 1}</td>
                     <td className="py-6 px-8 text-xs font-mono text-white break-all">{getId(item)}</td>
-                    <td className="py-6 px-8 text-white font-medium">{formatNumber(getAmount(item))} DNXS</td>
+                    <td className="py-6 px-8 text-white font-medium">{formatNumber(getAmount(item))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -295,7 +295,7 @@ export default function DataDisplay({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-8">
                 <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
                   <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Locked:</h3>
-                  <p className="text-3xl text-white font-semibold tracking-wide">{formatNumber(fetchedTotalLocked)} DNXS</p>
+                  <p className="text-3xl text-white font-semibold tracking-wide">{formatNumber(fetchedTotalLocked)}</p>
                 </div>
                 <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
                   <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribers:</h3>
@@ -307,28 +307,51 @@ export default function DataDisplay({
                 </div>
               </div>
 
-              {/* Fetched Data View Toggle */}
-              <div className="flex justify-center gap-8 mb-8">
-                <button
-                  onClick={() => setShowFetchedSubscribers(false)}
-                  className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-                    !showFetchedSubscribers 
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
-                      : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435]/90 hover:scale-102 border border-gray-800/30'
-                  }`}
-                >
-                  View Holders
-                </button>
-                <button
-                  onClick={() => setShowFetchedSubscribers(true)}
-                  className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-                    showFetchedSubscribers 
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
-                      : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435]/90 hover:scale-102 border border-gray-800/30'
-                  }`}
-                >
-                  View Subscribers
-                </button>
+              {/* Fetched Data Controls */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-2xl font-semibold text-white tracking-wide">{showFetchedSubscribers ? 'Subscribers' : 'Holders'}</h3>
+                  <button
+                    onClick={() => {
+                      const items = showFetchedSubscribers ? fetchedAgentData.subscribers.users : fetchedAgentData.holders.users;
+                      const csv = `Wallet Address,Amount\n${items.map(item => `${getId(item)},${formatNumber(getAmount(item)).replace(/,/g, '')}`).join('\n')}`;
+                      const blob = new Blob([csv], { type: 'text/csv' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${showFetchedSubscribers ? 'subscribers' : 'holders'}-${newAgentId}.csv`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    }}
+                    className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl hover:from-green-500 hover:to-green-400 transition-all duration-200 shadow-lg font-medium border border-green-400/20"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+                <div className="flex justify-center gap-8">
+                  <button
+                    onClick={() => setShowFetchedSubscribers(false)}
+                    className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
+                      !showFetchedSubscribers 
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
+                        : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435]/90 hover:scale-102 border border-gray-800/30'
+                    }`}
+                  >
+                    View Holders
+                  </button>
+                  <button
+                    onClick={() => setShowFetchedSubscribers(true)}
+                    className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
+                      showFetchedSubscribers 
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
+                        : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435]/90 hover:scale-102 border border-gray-800/30'
+                    }`}
+                  >
+                    View Subscribers
+                  </button>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -347,7 +370,7 @@ export default function DataDisplay({
                           <td className="py-6 px-8 text-white">{index + 1}</td>
                           <td className="py-6 px-8 text-xs font-mono text-white break-all">{getId(item)}</td>
                           <td className="py-6 px-8 text-white font-medium">
-                            {formatNumber(getAmount(item))} DNXS
+                            {formatNumber(getAmount(item))}
                           </td>
                         </tr>
                       ))}
