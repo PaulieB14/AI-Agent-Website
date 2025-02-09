@@ -217,8 +217,8 @@ export default function DataDisplay({
                 {(showSubscribers ? displayedSubscribers : displayedHolders).map((item, index) => (
                   <tr key={index} className="hover:bg-[#1E2435]/80 transition-colors duration-150">
                     <td className="py-6 px-8 text-white">{index + 1}</td>
-                    <td className="py-6 px-8 text-xs font-mono text-white break-all">{item.address}</td>
-                    <td className="py-6 px-8 text-white font-medium">{formatNumber(item.amount)} DNXS</td>
+                    <td className="py-6 px-8 text-xs font-mono text-white break-all">{getId(item)}</td>
+                    <td className="py-6 px-8 text-white font-medium">{formatNumber(getAmount(item))} DNXS</td>
                   </tr>
                 ))}
               </tbody>
@@ -250,6 +250,3 @@ export default function DataDisplay({
     </div>
   );
 }
-
-// Helper function to safely get property values
-const getProperty = (item: UnifiedDataItem, key: keyof UnifiedDataItem) => item[key] || '';
