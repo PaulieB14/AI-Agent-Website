@@ -1,4 +1,3 @@
-// page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +7,8 @@ import dynamic from 'next/dynamic';
 import client from '@/app/lib/apolloClient';
 import { CHECK_SUBSCRIPTION_QUERY, HOLDERS_QUERY, SUBSCRIBERS_QUERY } from '@/app/lib/queries';
 import DataDisplay from '@/app/components/DataDisplay';
-import Hero from '@/app/components/Hero';
+import AgentKeyDataDisplay from './components/AgentKeyDataDisplay';
+import Hero from './components/Hero';
 
 interface SubscriptionData {
   agentKeyUsers: Array<{
@@ -174,8 +174,8 @@ function WalletQueryComponent() {
 
   // Separate effect for fetching holders and subscribers
   useEffect(() => {
-    fetchHolders();
-    fetchSubscribers();
+    fetchHolders({ variables: { agentKey: AGENT_KEY } });
+    fetchSubscribers({ variables: { agentKey: AGENT_KEY } });
   }, []);
 
   return (
@@ -190,6 +190,9 @@ function WalletQueryComponent() {
           isEligible={isEligible || false}
           subscriptionData={subscriptionData}
         />
+        {isEligible && (
+          <AgentKeyDataDisplay />
+        )}
         <div className="mt-8 p-4 bg-gray-800 rounded-lg">
           <h2 className="text-xl font-bold mb-4">Wallet Status</h2>
           {isConnected ? (

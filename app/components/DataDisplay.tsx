@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
+import { useLazyQuery } from '@apollo/client';
 import { formatNumber } from '../utils/format';
+import { FETCH_AGENT_DATA_QUERY } from '../lib/queries';
+import client from '../lib/apolloClient';
 
 interface DataDisplayProps {
   totalLocked: string;
@@ -12,6 +15,14 @@ interface DataDisplayProps {
   isEligible: boolean;
   subscriptionData: string | null;
 }
+
+type UnifiedDataItem = {
+  id?: string;
+  address?: string;
+  balance?: string;
+  amount?: string;
+  totalSubscribed?: string;
+};
 
 export default function DataDisplay({
   totalLocked,
@@ -25,31 +36,61 @@ export default function DataDisplay({
   const [showAllSubscribers, setShowAllSubscribers] = useState(false);
   const [showSubscribers, setShowSubscribers] = useState(false);
   const [newAgentId, setNewAgentId] = useState('');
+  const [fetchedAgentData, setFetchedAgentData] = useState<{
+    id: string;
+    totalLocked: string;
+    users: Array<{ id: string; balance: string; totalSubscribed: string }>;
+  } | null>(null);
   const { address, isConnected } = useAccount();
+
+  const [fetchAgentData, { loading: fetchingAgentData }] = useLazyQuery(FETCH_AGENT_DATA_QUERY, {
+    client,
+    onCompleted: (data) => {
+      setFetchedAgentData(data.agentKey);
+    },
+    onError: (error) => {
+      console.error('Error fetching agent data:', error);
+      // You might want to set an error state here and display it to the user
+    },
+  });
+
+  const handleFetchAgentData = () => {
+    if (newAgentId) {
+      fetchAgentData({ variables: { agentKey: newAgentId } });
+    }
+  };
+
+  const getAmount = (item: UnifiedDataItem) => item.balance || item.amount || item.totalSubscribed || '0';
+  const getId = (item: UnifiedDataItem) => item.id || item.address || '';
+
   // Filter out duplicates and zero amounts
-  const uniqueHolders = holders
-    .filter(holder => parseFloat(holder.amount) > 0)
+  const uniqueHolders = (fetchedAgentData?.users || holders)
+    .filter(holder => parseFloat(getAmount(holder)) > 0)
     .filter((holder, index, self) => 
-      index === self.findIndex(h => h.address === holder.address)
+      index === self.findIndex(h => getId(h) === getId(holder))
     )
-    .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
+    .sort((a, b) => parseFloat(getAmount(b)) - parseFloat(getAmount(a)));
   
-  const nonZeroSubscribers = subscribers
-    .filter(sub => parseFloat(sub.amount) > 0)
-    .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
+  const nonZeroSubscribers = (fetchedAgentData?.users || subscribers)
+    .filter(sub => parseFloat(getAmount(sub)) > 0)
+    .sort((a, b) => parseFloat(getAmount(b)) - parseFloat(getAmount(a)));
   
   const displayedHolders = showAllHolders ? uniqueHolders : uniqueHolders.slice(0, 10);
   const displayedSubscribers = showAllSubscribers ? nonZeroSubscribers : nonZeroSubscribers.slice(0, 10);
 
+  // Use fetchedAgentData if available, otherwise use props
+  const displayedAgentKey = fetchedAgentData?.id || agentKey;
+  const displayedTotalLocked = fetchedAgentData?.totalLocked || totalLocked;
+
   const handleExportHoldersCSV = () => {
-    const holdersCsv = uniqueHolders.map(h => `${h.address},${formatNumber(h.amount).replace(/,/g, '')}`).join('\n');
+    const holdersCsv = uniqueHolders.map(h => `${getId(h)},${formatNumber(getAmount(h)).replace(/,/g, '')}`).join('\n');
     const csv = `Wallet Address,Amount\n${holdersCsv}`;
     
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `nexus-holders-${agentKey}.csv`;
+    a.download = `nexus-holders-${displayedAgentKey}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -57,14 +98,14 @@ export default function DataDisplay({
   };
 
   const handleExportSubscribersCSV = () => {
-    const subscribersCsv = nonZeroSubscribers.map(s => `${s.address},${formatNumber(s.amount).replace(/,/g, '')}`).join('\n');
+    const subscribersCsv = nonZeroSubscribers.map(s => `${getId(s)},${formatNumber(getAmount(s)).replace(/,/g, '')}`).join('\n');
     const csv = `Wallet Address,Amount\n${subscribersCsv}`;
     
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `nexus-subscribers-${agentKey}.csv`;
+    a.download = `nexus-subscribers-${displayedAgentKey}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -73,20 +114,27 @@ export default function DataDisplay({
 
   return (
     <div className="space-y-16">
+      {fetchingAgentData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg">
+            <p className="text-black">Loading agent data...</p>
+          </div>
+        </div>
+      )}
       {/* Stats Section */}
       <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Locked:</h3>
-            <p className="text-3xl text-white font-semibold tracking-wide">{formatNumber(totalLocked)} DNXS</p>
+            <p className="text-3xl text-white font-semibold tracking-wide">{formatNumber(displayedTotalLocked)} DNXS</p>
           </div>
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribers:</h3>
-            <p className="text-3xl text-white font-semibold tracking-wide">26</p>
+            <p className="text-3xl text-white font-semibold tracking-wide">{nonZeroSubscribers.length}</p>
           </div>
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Agent Key:</h3>
-            <p className="text-sm text-white font-mono break-all bg-[#232839]/80 p-3 rounded-lg border border-gray-800/30">{agentKey}</p>
+            <p className="text-sm text-white font-mono break-all bg-[#232839]/80 p-3 rounded-lg border border-gray-800/30">{displayedAgentKey}</p>
           </div>
         </div>
       </div>
@@ -191,7 +239,7 @@ export default function DataDisplay({
               className="flex-1 px-6 py-3.5 bg-[#1E2435]/80 rounded-xl text-white border border-gray-800/30 focus:border-blue-500 focus:outline-none transition-colors duration-200"
             />
             <button
-              onClick={() => {/* TODO: Handle fetching new agent data */}}
+              onClick={handleFetchAgentData}
               className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-500 hover:to-blue-400 transition-all duration-200 shadow-lg font-medium border border-blue-400/20"
             >
               Fetch Data
@@ -202,3 +250,6 @@ export default function DataDisplay({
     </div>
   );
 }
+
+// Helper function to safely get property values
+const getProperty = (item: UnifiedDataItem, key: keyof UnifiedDataItem) => item[key] || '';
