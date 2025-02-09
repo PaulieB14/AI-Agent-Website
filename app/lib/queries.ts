@@ -49,6 +49,27 @@ export const FETCH_AGENT_INFO_QUERY = gql`
   }
 `;
 
+export const FETCH_AGENT_USERS_QUERY = gql`
+  query FetchAgentUsers($agentKey: String!) {
+    agentKey(id: $agentKey) {
+      users(
+        first: 1000
+        orderBy: balance
+        orderDirection: desc
+        where: { balance_gt: "0" }
+      ) {
+        id
+        balance
+        agentKey {
+          ans {
+            symbol
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const FETCH_AGENT_SUBSCRIBERS_QUERY = gql`
   query FetchAgentSubscribers($agentKey: String!) {
     agentKey(id: $agentKey) {

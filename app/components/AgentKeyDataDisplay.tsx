@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLazyQuery, ApolloError } from '@apollo/client';
-import { FETCH_AGENT_INFO_QUERY, FETCH_AGENT_SUBSCRIBERS_QUERY } from '../lib/queries';
+import { FETCH_AGENT_INFO_QUERY, FETCH_AGENT_SUBSCRIBERS_QUERY, FETCH_AGENT_USERS_QUERY } from '../lib/queries';
 import client from '../lib/apolloClient';
 import { formatNumber } from '../utils/format';
 
@@ -11,6 +11,22 @@ interface AgentInfoResponse {
 interface AgentSubscribersResponse {
   agentKey: {
     users: Subscriber[];
+  };
+}
+
+interface AgentUsersResponse {
+  agentKey: {
+    users: User[];
+  };
+}
+
+interface User {
+  id: string;
+  balance: string;
+  agentKey: {
+    ans: {
+      symbol: string;
+    };
   };
 }
 
@@ -37,7 +53,9 @@ const AgentKeyDataDisplay: React.FC = () => {
   const [agentKey, setAgentKey] = useState('');
   const [agentInfo, setAgentInfo] = useState<AgentInfo | null>(null);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [showAllSubscribers, setShowAllSubscribers] = useState(false);
+  const [showAllUsers, setShowAllUsers] = useState(false);
 
   const [fetchAgentInfo, { loading: infoLoading, error: infoError }] = useLazyQuery(FETCH_AGENT_INFO_QUERY, {
     client,
@@ -53,22 +71,30 @@ const AgentKeyDataDisplay: React.FC = () => {
     },
   });
 
+  const [fetchUsers, { loading: usersLoading, error: usersError }] = useLazyQuery(FETCH_AGENT_USERS_QUERY, {
+    client,
+    onCompleted: (data: AgentUsersResponse) => {
+      setUsers(data.agentKey.users);
+    },
+  });
+
   const handleFetchData = () => {
     if (agentKey.trim()) {
       const trimmedKey = agentKey.trim();
       fetchAgentInfo({ variables: { agentKey: trimmedKey } });
       fetchSubscribers({ variables: { agentKey: trimmedKey } });
+      fetchUsers({ variables: { agentKey: trimmedKey } });
     } else {
       console.error('Agent Key is required');
     }
   };
 
-  const handleExportCSV = (data: Subscriber[], filename: string) => {
+  const handleExportCSV = (data: (Subscriber | User)[], filename: string) => {
     const csv = [
       ['Wallet Address', 'Amount'],
       ...data.map(item => [
         item.id.split('-').pop() || '',
-        formatNumber(item.totalSubscribed)
+        formatNumber('balance' in item ? item.balance : item.totalSubscribed)
       ]),
     ].map(row => row.join(',')).join('\n');
 
@@ -86,8 +112,9 @@ const AgentKeyDataDisplay: React.FC = () => {
   };
 
   const displayedSubscribers = showAllSubscribers ? subscribers : subscribers.slice(0, 10);
-  const loading = infoLoading || subsLoading;
-  const error: ApolloError | undefined = infoError || subsError;
+  const displayedUsers = showAllUsers ? users : users.slice(0, 10);
+  const loading = infoLoading || subsLoading || usersLoading;
+  const error: ApolloError | undefined = infoError || subsError || usersError;
 
   return (
     <div className="mt-8 p-4 bg-gray-800 rounded-lg">
@@ -123,6 +150,36 @@ const AgentKeyDataDisplay: React.FC = () => {
                 <p className="text-lg">{agentInfo.totalSubscribers}</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {users.length > 0 && (
+          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Users with Balance</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleExportCSV(users, 'users')}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm"
+                >
+                  Export CSV
+                </button>
+                <button
+                  onClick={() => setShowAllUsers(!showAllUsers)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                >
+                  {showAllUsers ? 'Show Top 10' : 'Show All'}
+                </button>
+              </div>
+            </div>
+            <ul className="space-y-2">
+              {displayedUsers.map((user, index) => (
+                <li key={index} className="flex justify-between items-center px-4 py-2 bg-gray-800 rounded">
+                  <span className="font-mono">{user.id.split('-').pop()}</span>
+                  <span>{formatNumber(user.balance)} {user.agentKey.ans?.symbol || ''}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
