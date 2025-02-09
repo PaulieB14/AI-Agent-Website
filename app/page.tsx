@@ -7,7 +7,6 @@ import dynamic from 'next/dynamic';
 import client from '@/app/lib/apolloClient';
 import { CHECK_SUBSCRIPTION_QUERY, HOLDERS_QUERY, SUBSCRIBERS_QUERY } from '@/app/lib/queries';
 import DataDisplay from '@/app/components/DataDisplay';
-import AgentKeyDataDisplay from './components/AgentKeyDataDisplay';
 import Hero from './components/Hero';
 
 interface SubscriptionData {
@@ -189,24 +188,9 @@ function WalletQueryComponent() {
           subscribers={subscribersData}
           isEligible={isEligible || false}
           subscriptionData={subscriptionData}
+          isLoading={isLoading}
+          error={error}
         />
-        {isEligible && (
-          <AgentKeyDataDisplay />
-        )}
-        <div className="mt-8 p-4 bg-gray-800 rounded-lg">
-          <h2 className="text-xl font-bold mb-4">Wallet Status</h2>
-          {isConnected ? (
-            <>
-              <p>Connected Address: {address}</p>
-              <p>Eligibility: {isEligible ? 'Eligible' : 'Not Eligible'}</p>
-              <p>Subscription Data: {subscriptionData ? formatGwei(subscriptionData) : 'N/A'} DNXS</p>
-              {isLoading && <p>Loading...</p>}
-              {error && <p className="text-red-500">Error: {error}</p>}
-            </>
-          ) : (
-            <p>Wallet not connected</p>
-          )}
-        </div>
       </div>
     </ClientOnly>
   );

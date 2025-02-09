@@ -14,6 +14,8 @@ interface DataDisplayProps {
   subscribers: Array<{ address: string; amount: string }>;
   isEligible: boolean;
   subscriptionData: string | null;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 type UnifiedDataItem = {
@@ -30,12 +32,15 @@ export default function DataDisplay({
   holders,
   subscribers,
   isEligible,
-  subscriptionData
+  subscriptionData,
+  isLoading,
+  error
 }: DataDisplayProps) {
   const [showAllHolders, setShowAllHolders] = useState(false);
   const [showAllSubscribers, setShowAllSubscribers] = useState(false);
   const [showSubscribers, setShowSubscribers] = useState(false);
   const [newAgentId, setNewAgentId] = useState('');
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [fetchedAgentData, setFetchedAgentData] = useState<{
     id: string;
     totalLocked: string;
@@ -46,22 +51,36 @@ export default function DataDisplay({
   const [fetchAgentData, { loading: fetchingAgentData }] = useLazyQuery(FETCH_AGENT_DATA_QUERY, {
     client,
     onCompleted: (data) => {
-      setFetchedAgentData(data.agentKey);
+      if (data?.agentKey) {
+        setFetchedAgentData(data.agentKey);
+        setFetchError(null);
+        // Show subscribers view after fetching data
+        setShowSubscribers(true);
+        setShowAllSubscribers(true);
+      } else {
+        setFetchError('No data found for this agent key');
+      }
     },
     onError: (error) => {
       console.error('Error fetching agent data:', error);
-      // You might want to set an error state here and display it to the user
+      setFetchError(error.message);
+      setFetchedAgentData(null);
     },
   });
 
   const handleFetchAgentData = () => {
     if (newAgentId) {
+      setFetchError(null);
       fetchAgentData({ variables: { agentKey: newAgentId } });
     }
   };
 
   const getAmount = (item: UnifiedDataItem) => item.balance || item.amount || item.totalSubscribed || '0';
-  const getId = (item: UnifiedDataItem) => item.id || item.address || '';
+  const getId = (item: UnifiedDataItem) => {
+    const id = item.id || item.address || '';
+    // If the id contains a hyphen (agent key prefix), get the part after the hyphen
+    return id.includes('-') ? id.split('-')[1] : id;
+  };
 
   // Filter out duplicates and zero amounts
   const uniqueHolders = (fetchedAgentData?.users || holders)
@@ -114,6 +133,23 @@ export default function DataDisplay({
 
   return (
     <div className="space-y-16">
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg">
+            <p className="text-black">Loading data...</p>
+          </div>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg mb-4">
+          <p className="text-red-500">{error}</p>
+        </div>
+      )}
+      {fetchError && (
+        <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg mb-4">
+          <p className="text-red-500">{fetchError}</p>
+        </div>
+      )}
       {fetchingAgentData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg">
