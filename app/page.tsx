@@ -157,6 +157,7 @@ function WalletQueryComponent() {
     }
   };
 
+  // Effect for checking eligibility when wallet connects
   useEffect(() => {
     if (isConnected && address) {
       console.log("🔄 Wallet connected, auto-checking eligibility for:", address);
@@ -167,15 +168,25 @@ function WalletQueryComponent() {
       setIsEligible(null);
       setSubscriptionData(null);
     }
-    fetchHolders();
-    fetchSubscribers();
   }, [isConnected, address]);
 
-  // Separate effect for fetching holders and subscribers
+  // Effect for fetching initial data
   useEffect(() => {
-    fetchHolders({ variables: { agentKey: AGENT_KEY } });
-    fetchSubscribers({ variables: { agentKey: AGENT_KEY } });
-  }, []);
+    const fetchData = async () => {
+      try {
+        await Promise.all([
+          fetchHolders({ variables: { agentKey: AGENT_KEY } }),
+          fetchSubscribers({ variables: { agentKey: AGENT_KEY } })
+        ]);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+
+    if (AGENT_KEY) {
+      fetchData();
+    }
+  }, [fetchHolders, fetchSubscribers]);
 
   return (
     <ClientOnly>
