@@ -3,12 +3,19 @@ import { ApolloClient, InMemoryCache, from, HttpLink } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
 
-// Get Graph API key from environment variable
+// Get and validate Graph API key
 const GRAPH_API_KEY = process.env.NEXT_PUBLIC_GRAPH_API_KEY;
 
-// Create HTTP link with proper subgraph URL
+if (!GRAPH_API_KEY) {
+  throw new Error('NEXT_PUBLIC_GRAPH_API_KEY is not defined in environment variables');
+}
+
+// Create HTTP link with API key validation
 const httpLink = new HttpLink({
-  uri: `https://gateway.thegraph.com/api/${GRAPH_API_KEY}/subgraphs/id/8f1XAvLcseuxGvme1EYCSCoRnpfDPa6D5jHB914gEM3L`
+  uri: `https://gateway.thegraph.com/api/${GRAPH_API_KEY}/subgraphs/id/8f1XAvLcseuxGvme1EYCSCoRnpfDPa6D5jHB914gEM3L`,
+  headers: {
+    'Authorization': `Bearer ${GRAPH_API_KEY}`
+  }
 });
 
 const errorLink = onError(({ graphQLErrors, networkError, operation }) => {

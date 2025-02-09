@@ -9,13 +9,17 @@ interface DataDisplayProps {
   agentKey: string;
   holders: Array<{ address: string; amount: string }>;
   subscribers: Array<{ address: string; amount: string }>;
+  isEligible: boolean;
+  subscriptionData: string | null;
 }
 
 export default function DataDisplay({
   totalLocked,
   agentKey,
   holders,
-  subscribers
+  subscribers,
+  isEligible,
+  subscriptionData
 }: DataDisplayProps) {
   const [showAllHolders, setShowAllHolders] = useState(false);
   const [showAllSubscribers, setShowAllSubscribers] = useState(false);
@@ -33,13 +37,6 @@ export default function DataDisplay({
   const nonZeroSubscribers = subscribers
     .filter(sub => parseFloat(sub.amount) > 0)
     .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
-
-  // Check if address exists in holders or subscribers with sufficient amount
-  const holderAmount = uniqueHolders.find(h => h.address.toLowerCase() === address?.toLowerCase())?.amount || '0';
-  const subscriberAmount = nonZeroSubscribers.find(s => s.address.toLowerCase() === address?.toLowerCase())?.amount || '0';
-  const totalAmount = parseFloat(holderAmount) + parseFloat(subscriberAmount);
-  
-  const isEligible = totalAmount >= 10000;
   
   const displayedHolders = showAllHolders ? uniqueHolders : uniqueHolders.slice(0, 10);
   const displayedSubscribers = showAllSubscribers ? nonZeroSubscribers : nonZeroSubscribers.slice(0, 10);
@@ -101,9 +98,17 @@ export default function DataDisplay({
           Connect your wallet with 10,000 locked DNXS tokens to export CSV files of your project&apos;s holders and subscribers.
         </p>
         {isConnected && (
-          <div className={`text-xl font-bold ${isEligible ? 'text-green-500 animate-pulse' : 'text-red-500'}`}>
-            {isEligible ? 'Eligible - Scroll to bottom' : 'Not Eligible - Need 10,000 DNXS'}
-          </div>
+          <>
+            <div className={`text-xl font-bold ${isEligible ? 'text-green-500 animate-pulse' : 'text-red-500'}`}>
+              {isEligible ? 'Eligible - Scroll to bottom' : 'Not Eligible - Need 10,000 DNXS'}
+            </div>
+            <div className="mt-2 text-gray-300">
+              Connected Address: {address}
+            </div>
+            <div className="mt-1 text-gray-300">
+              Subscription Amount: {subscriptionData ? formatNumber(subscriptionData) : 'N/A'} DNXS
+            </div>
+          </>
         )}
       </div>
 

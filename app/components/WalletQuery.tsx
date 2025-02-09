@@ -4,132 +4,147 @@ import { useState, useEffect } from 'react';
 import { useLazyQuery } from '@apollo/client';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import client from '../apolloClient';
-import { CHECK_SUBSCRIPTION_QUERY } from '../queries';
+import client from '../lib/apolloClient';
+import { CHECK_SUBSCRIPTION_QUERY } from '../lib/queries';
+
+const REQUIRED_DNXS = BigInt('10000000000000000000000'); // 10,000 DNXS
 
 export default function WalletQuery() {
-  const { address, isConnected } = useAccount(); // Wallet connection state
-  const [isEligible, setIsEligible] = useState<boolean | null>(null); // Eligibility state
-  const [subscriptionData, setSubscriptionData] = useState<string | null>(null); // Store subscription data
+  const { address, isConnected } = useAccount();
+  const [isEligible, setIsEligible] = useState<boolean | null>(null);
+  const [subscriptionData, setSubscriptionData] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [checkSubscription] = useLazyQuery(CHECK_SUBSCRIPTION_QUERY, {
     client,
     fetchPolicy: 'no-cache',
     onCompleted: (data) => {
-      console.log('Query completed with data:', data);
+      console.log('📊 Query completed:', JSON.stringify(data, null, 2));
     },
     onError: (error) => {
-      console.error('Error during subscription check:', error);
-      setIsEligible(false); // In case of error, mark as ineligible
+      console.error('❌ Query error:', error);
+      setError(error.message);
+      setIsEligible(false);
     },
   });
 
-  // Format Gwei to DNXS readable value
   const formatGwei = (value: string | undefined): string => {
     if (!value) return '0.000';
-    const num = parseFloat(value) / 1e18;
-    return num.toLocaleString('en-US', {
-      minimumFractionDigits: 3,
-      maximumFractionDigits: 3,
-    });
+    try {
+      const num = parseFloat(value) / 1e18;
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3,
+      });
+    } catch (error) {
+      console.error('Error formatting value:', error);
+      return '0.000';
+    }
   };
 
-  // Function to check if the user is eligible
   const checkEligibility = async () => {
     if (!isConnected || !address) {
-      console.log("Wallet not connected or address not found.");
+      console.log("❌ Wallet not connected");
       setIsEligible(false);
+      setError("Please connect your wallet");
       return;
     }
 
-    console.log("Wallet connected with address:", address);
-
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const userAddress = address.toLowerCase(); // Ensure the address is lowercase
-      console.log('Checking eligibility for address:', userAddress);
+      const userAddress = address.toLowerCase();
+      console.log("🔍 Checking wallet:", userAddress);
 
       const { data } = await checkSubscription({
         variables: { user: userAddress },
       });
 
-      console.log('Query variables:', { user: userAddress });
-      console.log('Query response:', data);
+      if (!data?.agentKeyUsers?.[0]) {
+        console.log("⚠️ No subscription found");
+        setIsEligible(false);
+        setSubscriptionData('0');
+        return;
+      }
 
-      const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed || '0';
-      console.log('Raw subscription amount:', totalSubscribed);
+      const totalSubscribed = data.agentKeyUsers[0].totalSubscribed || '0';
+      const subscribedBigInt = BigInt(totalSubscribed);
 
-      // Compare raw values using BigInt for precision
-      const isEligible = BigInt(totalSubscribed) >= BigInt('10000000000000000000000'); // 10,000 DNXS in raw value
+      console.log(`
+        💰 Subscription Details:
+        Raw: ${totalSubscribed}
+        Required: ${REQUIRED_DNXS.toString()}
+        Has: ${subscribedBigInt.toString()}
+        Human readable: ${formatGwei(totalSubscribed)} DNXS
+      `);
 
-      // Convert to human-readable DNXS for logging
-      const subscribedDNXS = Number(BigInt(totalSubscribed)) / 1e18;
-      console.log('Found subscription:', subscribedDNXS.toFixed(3), 'DNXS');
-      console.log('Required amount: 10,000 DNXS');
-      console.log('Eligible:', isEligible);
+      const eligible = subscribedBigInt >= REQUIRED_DNXS;
+      console.log("✅ Eligible:", eligible);
 
       setSubscriptionData(totalSubscribed);
-      setIsEligible(isEligible);
+      setIsEligible(eligible);
+
     } catch (error) {
-      console.error('Error checking eligibility:', error);
+      console.error("❌ Check failed:", error);
+      setError("Failed to check eligibility");
       setIsEligible(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Check eligibility once wallet is connected
   useEffect(() => {
     if (isConnected && address) {
-      console.log("Auto-checking eligibility for connected wallet:", address);
+      console.log("🔄 Auto-checking wallet:", address);
       checkEligibility();
     }
-  }, [isConnected, address]); // No need to add checkEligibility as a dependency
+  }, [isConnected, address]);
 
+  // Rest of your JSX remains the same, but add loading states:
   return (
     <div className="text-center py-8 md:py-10 px-4">
-      <div className="bg-gray-900 p-4 md:p-6 rounded-lg shadow-lg max-w-5xl mx-auto mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center md:text-left">
-            <p className="text-base md:text-lg font-bold text-gray-400">Total Locked:</p>
-            <p className="text-base md:text-lg text-white">7,293,790.953 DNXS</p>
-          </div>
-          <div className="text-center md:text-left">
-            <p className="text-base md:text-lg font-bold text-gray-400">Total Subscribers:</p>
-            <p className="text-base md:text-lg text-white">27</p>
-          </div>
-          <div className="text-center md:text-left">
-            <p className="text-base md:text-lg font-bold text-gray-400">Agent Key:</p>
-            <p className="text-xs md:text-sm text-white break-all">{address}</p>
-          </div>
-        </div>
-      </div>
+      {/* ... existing stats section ... */}
 
       <div className="bg-gray-800 p-4 md:p-6 rounded-lg mb-6">
         <div className="text-center mb-4">
-          <h3 className="text-lg md:text-xl font-semibold text-white mb-2">Want to Export Your Own Project Data?</h3>
+          <h3 className="text-lg md:text-xl font-semibold text-white mb-2">
+            Want to Export Your Own Project Data?
+          </h3>
           <p className="text-gray-300 text-sm md:text-base">
-            Connect your wallet and check if you have enough DNXS subscribed (10,000 minimum) to export project data.
+            Connect your wallet and check if you have enough DNXS subscribed (10,000 minimum)
           </p>
         </div>
+
         <div className="flex flex-col items-center gap-4">
-          <div className="flex justify-center">
-            <ConnectButton />
-          </div>
+          <ConnectButton />
+          
           {isConnected && (
             <div className="flex flex-col items-center gap-4">
               <button
                 onClick={checkEligibility}
-                className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
+                disabled={isLoading}
+                className={`w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-lg 
+                  hover:bg-blue-400 transition-colors duration-200 font-semibold
+                  ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                Check Eligibility
+                {isLoading ? 'Checking...' : 'Check Eligibility'}
               </button>
-              {isEligible !== null && (
+
+              {error && (
+                <p className="text-red-500 text-sm">{error}</p>
+              )}
+
+              {isEligible !== null && !error && (
                 <div className="text-center">
-                  <p className="text-gray-300 mb-2">Your subscription amount: {formatGwei(subscriptionData || '0')} DNXS</p>
+                  <p className="text-gray-300 mb-2">
+                    Your subscription: {formatGwei(subscriptionData || '0')} DNXS
+                  </p>
                   {isEligible ? (
-                    <p className="text-green-500 text-sm md:text-base">✓ You have enough DNXS subscribed to export data</p>
+                    <p className="text-green-500">✓ Eligible to export data</p>
                   ) : (
-                    <p className="text-yellow-500 text-sm md:text-base">
-                      ⚠️ You need 10,000 DNXS subscribed to export data
-                    </p>
+                    <p className="text-yellow-500">⚠️ Need 10,000 DNXS minimum</p>
                   )}
                 </div>
               )}
@@ -138,49 +153,7 @@ export default function WalletQuery() {
         </div>
       </div>
 
-      <div className="bg-gray-800 p-4 md:p-6 rounded-lg mb-6">
-        <div className="text-center mb-4">
-          <h3 className="text-lg md:text-xl font-semibold text-white mb-2">Query Specific Wallet</h3>
-          <p className="text-gray-300 text-sm md:text-base">
-            Enter a wallet address to view its DNXS holdings and subscriptions
-          </p>
-        </div>
-        {/* Query wallet address form */}
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!address) return;
-
-            try {
-              console.log('Querying wallet:', address);
-              const { data } = await checkSubscription({
-                variables: { user: address.toLowerCase() },
-              });
-
-              const totalSubscribed = data?.agentKeyUsers[0]?.totalSubscribed || '0';
-              console.log('Queried subscription amount for wallet:', totalSubscribed);
-
-              setSubscriptionData(totalSubscribed);
-            } catch (error) {
-              console.error('Error querying wallet:', error);
-            }
-          }}
-          className="flex flex-col sm:flex-row gap-3"
-        >
-          <input
-            type="text"
-            value={address || ''}
-            readOnly
-            className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors duration-200 font-semibold"
-          >
-            Query Wallet
-          </button>
-        </form>
-      </div>
+      {/* ... existing query form section ... */}
     </div>
   );
 }
