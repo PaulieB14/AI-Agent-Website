@@ -14,6 +14,8 @@ export const HOLDERS_QUERY = gql`
 `;
 
 export const SUBSCRIBERS_QUERY = gql`
+
+
   query GetSubscribers($agentKey: String!) {
     agentKey(id: $agentKey) {
       totalSubscribed
@@ -36,16 +38,12 @@ export const CHECK_SUBSCRIPTION_QUERY = gql`
 
 export const FETCH_AGENT_DATA_QUERY = gql`
   query FetchAgentData($agentKey: String!) {
-    subscribers: agentKey(id: $agentKey) {
+    agentKey(id: $agentKey) {
+      totalSubscribed
+      totalSubscribers
       users(first: 1000, orderBy: totalSubscribed, orderDirection: desc, where: { totalSubscribed_gt: "0" }) {
         id
         totalSubscribed
-      }
-    }
-    holders: agentKey(id: $agentKey) {
-      users(first: 1000, orderBy: balance, orderDirection: desc) {
-        id
-        balance
       }
     }
   }

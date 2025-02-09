@@ -26,6 +26,8 @@ interface HoldersData {
 
 interface SubscribersData {
   agentKey: {
+    totalSubscribed: string;
+    totalSubscribers: string;
     users: Array<{
       id: string;
       totalSubscribed: string;
@@ -50,7 +52,8 @@ function WalletQueryComponent() {
   const [error, setError] = useState<string | null>(null);
   const [holdersData, setHoldersData] = useState<Array<{ address: string; amount: string }>>([]);
   const [subscribersData, setSubscribersData] = useState<Array<{ address: string; amount: string }>>([]);
-  const [totalLocked, setTotalLocked] = useState<string>('0');
+  const [totalSubscribed, setTotalSubscribed] = useState<string>('0');
+  const [totalSubscribers, setTotalSubscribers] = useState<string>('0');
 
   const [checkSubscription] = useLazyQuery<SubscriptionData>(CHECK_SUBSCRIPTION_QUERY, {
     client,
@@ -74,8 +77,6 @@ function WalletQueryComponent() {
         amount: user.balance
       }));
       setHoldersData(holders);
-      const total = holders.reduce((sum, holder) => sum + BigInt(holder.amount), BigInt(0));
-      setTotalLocked(total.toString());
     },
     onError: (error) => {
       console.error('❌ Holders query error:', error);
@@ -92,6 +93,8 @@ function WalletQueryComponent() {
         amount: user.totalSubscribed
       }));
       setSubscribersData(subscribers);
+      setTotalSubscribed(data.agentKey.totalSubscribed);
+      setTotalSubscribers(data.agentKey.totalSubscribers);
     },
     onError: (error) => {
       console.error('❌ Subscribers query error:', error);
@@ -193,7 +196,8 @@ function WalletQueryComponent() {
       <Hero />
       <div className="container mx-auto px-4">
         <DataDisplay
-          totalLocked={totalLocked}
+          totalLocked={totalSubscribed}
+          totalSubscribers={totalSubscribers}
           agentKey={AGENT_KEY}
           holders={holdersData}
           subscribers={subscribersData}

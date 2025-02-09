@@ -9,6 +9,7 @@ import client from '../lib/apolloClient';
 
 interface DataDisplayProps {
   totalLocked: string;
+  totalSubscribers: string;
   agentKey: string;
   holders: Array<{ address: string; amount: string }>;
   subscribers: Array<{ address: string; amount: string }>;
@@ -28,6 +29,7 @@ type UnifiedDataItem = {
 
 export default function DataDisplay({
   totalLocked,
+  totalSubscribers,
   agentKey,
   holders,
   subscribers,
@@ -43,11 +45,10 @@ export default function DataDisplay({
   const [newAgentId, setNewAgentId] = useState('');
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fetchedAgentData, setFetchedAgentData] = useState<{
-    subscribers: {
+    agentKey: {
+      totalSubscribed: string;
+      totalSubscribers: string;
       users: Array<{ id: string; totalSubscribed: string }>;
-    };
-    holders: {
-      users: Array<{ id: string; balance: string }>;
     };
   } | null>(null);
   const { address, isConnected } = useAccount();
@@ -55,7 +56,7 @@ export default function DataDisplay({
   const [fetchAgentData, { loading: fetchingAgentData }] = useLazyQuery(FETCH_AGENT_DATA_QUERY, {
     client,
     onCompleted: (data) => {
-      if (data?.subscribers?.users && data?.holders?.users) {
+      if (data?.agentKey) {
         setFetchedAgentData(data);
         setFetchError(null);
       } else {
@@ -98,13 +99,8 @@ export default function DataDisplay({
   const displayedHolders = showAllHolders ? uniqueHolders : uniqueHolders.slice(0, 10);
   const displayedSubscribers = showAllSubscribers ? nonZeroSubscribers : nonZeroSubscribers.slice(0, 10);
 
-  // Calculate total locked from holders' balances
-  const calculateTotalLocked = (users: Array<{ balance: string }>) => {
-    return users.reduce((sum, user) => sum + BigInt(user.balance), BigInt(0)).toString();
-  };
-
-  // Separate section for fetched agent data
-  const fetchedTotalLocked = fetchedAgentData ? calculateTotalLocked(fetchedAgentData.holders.users) : '0';
+  // Get total subscribed amount and add DNXS suffix
+  const fetchedTotalSubscribed = `${formatNumber(fetchedAgentData?.agentKey?.totalSubscribed || '0')} DNXS`;
 
   const handleExportHoldersCSV = () => {
     const holdersCsv = uniqueHolders.map(h => `${getId(h)},${formatNumber(getAmount(h)).replace(/,/g, '')}`).join('\n');
@@ -166,12 +162,12 @@ export default function DataDisplay({
       <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
-            <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Locked:</h3>
+            <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribed:</h3>
             <p className="text-3xl text-white font-semibold tracking-wide">{formatNumber(totalLocked)} DNXS</p>
           </div>
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribers:</h3>
-            <p className="text-3xl text-white font-semibold tracking-wide">{nonZeroSubscribers.length}</p>
+            <p className="text-3xl text-white font-semibold tracking-wide">{totalSubscribers}</p>
           </div>
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Agent Key:</h3>
@@ -294,12 +290,12 @@ export default function DataDisplay({
             <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-8">
                 <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
-                  <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Locked:</h3>
-                  <p className="text-3xl text-white font-semibold tracking-wide">{formatNumber(fetchedTotalLocked)}</p>
+                  <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribed:</h3>
+                  <p className="text-3xl text-white font-semibold tracking-wide">{fetchedTotalSubscribed}</p>
                 </div>
                 <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
                   <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribers:</h3>
-                  <p className="text-3xl text-white font-semibold tracking-wide">{fetchedAgentData.subscribers.users.length}</p>
+                  <p className="text-3xl text-white font-semibold tracking-wide">{fetchedAgentData.agentKey.totalSubscribers}</p>
                 </div>
                 <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
                   <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Agent Key:</h3>
@@ -313,13 +309,15 @@ export default function DataDisplay({
                   <h3 className="text-2xl font-semibold text-white tracking-wide">{showFetchedSubscribers ? 'Subscribers' : 'Holders'}</h3>
                   <button
                     onClick={() => {
-                      const items = showFetchedSubscribers ? fetchedAgentData.subscribers.users : fetchedAgentData.holders.users;
-                      const csv = `Wallet Address,Amount\n${items.map(item => `${getId(item)},${formatNumber(getAmount(item)).replace(/,/g, '')}`).join('\n')}`;
+                      const items = fetchedAgentData.agentKey.users;
+                      const csv = `Wallet Address,Amount\n${items.map((item: { id: string; totalSubscribed: string }) => 
+                        `${getId(item)},${formatNumber(getAmount(item)).replace(/,/g, '')}`
+                      ).join('\n')}`;
                       const blob = new Blob([csv], { type: 'text/csv' });
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `${showFetchedSubscribers ? 'subscribers' : 'holders'}-${newAgentId}.csv`;
+                      a.download = `subscribers-${newAgentId}.csv`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
@@ -365,7 +363,7 @@ export default function DataDisplay({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-800/30">
-                      {(showFetchedSubscribers ? fetchedAgentData.subscribers.users : fetchedAgentData.holders.users).map((item, index) => (
+                      {fetchedAgentData.agentKey.users.map((item, index) => (
                         <tr key={index} className="hover:bg-[#1E2435]/80 transition-colors duration-150">
                           <td className="py-6 px-8 text-white">{index + 1}</td>
                           <td className="py-6 px-8 text-xs font-mono text-white break-all">{getId(item)}</td>
