@@ -40,10 +40,10 @@ export default function DataDisplay({
   error,
   tokenSymbol = 'DNXS'
 }: DataDisplayProps) {
-  const [showAllHolders, setShowAllHolders] = useState(false);
-  const [showAllSubscribers, setShowAllSubscribers] = useState(false);
-  const [showSubscribers, setShowSubscribers] = useState(false);
   const [showFetchedSubscribers, setShowFetchedSubscribers] = useState(true);
+  const [showSubscribers, setShowSubscribers] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [showAllFetched, setShowAllFetched] = useState(false);
   const [newAgentId, setNewAgentId] = useState('');
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [fetchedAgentData, setFetchedAgentData] = useState<{
@@ -123,53 +123,9 @@ export default function DataDisplay({
     return id.includes('-') ? id.split('-')[1] : id;
   };
 
-  const uniqueHolders = holders
-    .filter(holder => parseFloat(getAmount(holder)) > 0)
-    .filter((holder, index, self) => 
-      index === self.findIndex(h => getId(h) === getId(holder))
-    )
-    .sort((a, b) => parseFloat(getAmount(b)) - parseFloat(getAmount(a)));
-  
-  const nonZeroSubscribers = subscribers
-    .filter(sub => parseFloat(getAmount(sub)) > 0)
-    .sort((a, b) => parseFloat(getAmount(b)) - parseFloat(getAmount(a)));
-  
-  const displayedHolders = showAllHolders ? uniqueHolders : uniqueHolders.slice(0, 10);
-  const displayedSubscribers = showAllSubscribers ? nonZeroSubscribers : nonZeroSubscribers.slice(0, 10);
-
   const currentSymbol = fetchedAgentData?.agentKey?.users[0]?.agentKey?.ans?.symbol || tokenSymbol;
   const fetchedTotalSubscribed = `${formatNumber(fetchedAgentData?.agentKey?.totalSubscribed || '0')} ${currentSymbol}`;
   const fetchedTotalSubscribers = fetchedAgentData?.agentKey?.totalSubscribers || '0';
-
-  const handleExportHoldersCSV = () => {
-    const holdersCsv = uniqueHolders.map(h => `${getId(h)},${formatNumber(getAmount(h)).replace(/,/g, '')}`).join('\n');
-    const csv = `Wallet Address,Amount\n${holdersCsv}`;
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentSymbol.toLowerCase()}-holders-${agentKey}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  };
-
-  const handleExportSubscribersCSV = () => {
-    const subscribersCsv = nonZeroSubscribers.map(s => `${getId(s)},${formatNumber(getAmount(s)).replace(/,/g, '')}`).join('\n');
-    const csv = `Wallet Address,Amount\n${subscribersCsv}`;
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentSymbol.toLowerCase()}-subscribers-${agentKey}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  };
 
   return (
     <div className="space-y-16">
@@ -202,15 +158,21 @@ export default function DataDisplay({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribed:</h3>
-            <p className="text-3xl text-white font-semibold tracking-wide">{formatNumber(totalLocked)} {currentSymbol}</p>
+            <p className="text-3xl text-white font-semibold tracking-wide">
+              {fetchedAgentData ? fetchedTotalSubscribed : `${formatNumber(totalLocked)} ${currentSymbol}`}
+            </p>
           </div>
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribers:</h3>
-            <p className="text-3xl text-white font-semibold tracking-wide">{totalSubscribers}</p>
+            <p className="text-3xl text-white font-semibold tracking-wide">
+              {fetchedAgentData ? fetchedTotalSubscribers : totalSubscribers}
+            </p>
           </div>
           <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
             <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Agent Key:</h3>
-            <p className="text-sm text-white font-mono break-all bg-[#232839]/80 p-3 rounded-lg border border-gray-800/30">{agentKey}</p>
+            <p className="text-sm text-white font-mono break-all bg-[#232839]/80 p-3 rounded-lg border border-gray-800/30">
+              {fetchedAgentData ? newAgentId : agentKey}
+            </p>
           </div>
         </div>
       </div>
@@ -236,78 +198,11 @@ export default function DataDisplay({
         )}
       </div>
 
-      {/* View Toggle */}
-      <div className="flex justify-center gap-8">
-        <button
-          onClick={() => setShowSubscribers(false)}
-          className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-            !showSubscribers 
-              ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
-              : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435]/90 hover:scale-102 border border-gray-800/30'
-          }`}
-        >
-          View Holders
-        </button>
-        <button
-          onClick={() => setShowSubscribers(true)}
-          className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-            showSubscribers 
-              ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
-              : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435]/90 hover:scale-102 border border-gray-800/30'
-          }`}
-        >
-          View Subscribers
-        </button>
-      </div>
-
       {/* Data Section */}
       <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
-          <div className="flex items-center gap-4">
-            <h3 className="text-2xl font-semibold text-white tracking-wide">{showSubscribers ? 'Subscribers' : 'Holders'}</h3>
-            <button
-              onClick={showSubscribers ? handleExportSubscribersCSV : handleExportHoldersCSV}
-              className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl hover:from-green-500 hover:to-green-400 transition-all duration-200 shadow-lg font-medium border border-green-400/20"
-            >
-              Export CSV
-            </button>
-          </div>
-          <button
-            onClick={() => showSubscribers ? setShowAllSubscribers(!showAllSubscribers) : setShowAllHolders(!showAllHolders)}
-            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-500 hover:to-blue-400 transition-all duration-200 shadow-lg font-medium border border-blue-400/20"
-          >
-            {(showSubscribers ? showAllSubscribers : showAllHolders) ? 'Show Less' : 'Show All'}
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <div className="overflow-hidden rounded-xl border border-gray-800/30 min-w-[1200px]">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left bg-[#1E2435]/80 border-b border-gray-800/30">
-                  <th className="py-6 px-8 text-gray-400/90 font-medium w-16">#</th>
-                  <th className="py-6 px-8 text-gray-400/90 font-medium">Wallet Address</th>
-                  <th className="py-6 px-8 text-gray-400/90 font-medium w-48">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800/30">
-                {(showSubscribers ? displayedSubscribers : displayedHolders).map((item, index) => (
-                  <tr key={index} className="hover:bg-[#1E2435]/80 transition-colors duration-150">
-                    <td className="py-6 px-8 text-white">{index + 1}</td>
-                    <td className="py-6 px-8 text-xs font-mono text-white break-all">{getId(item)}</td>
-                    <td className="py-6 px-8 text-white font-medium">{formatNumber(getAmount(item))} {currentSymbol}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* Agent ID Section */}
-      {isConnected && isEligible && (
-        <>
-          <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
-            <div className="flex gap-4">
+        <div className="flex flex-col gap-6">
+          {isConnected && isEligible && (
+            <div className="flex gap-3">
               <input
                 type="text"
                 placeholder="Enter Agent ID"
@@ -322,109 +217,132 @@ export default function DataDisplay({
                 Fetch Data
               </button>
             </div>
-          </div>
+          )}
 
-          {/* Fetched Agent Data Section */}
-          {fetchedAgentData && (
-            <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-8">
-                <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
-                  <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribed:</h3>
-                  <p className="text-3xl text-white font-semibold tracking-wide">{fetchedTotalSubscribed}</p>
+          <div className="flex justify-between items-center">
+              <div className="flex items-center gap-4">
+              {fetchedAgentData && (
+                <div className="text-white">
+                  <span className="text-gray-400/90 mr-2">Agent Key:</span>
+                  <span className="font-mono text-sm">{newAgentId}</span>
                 </div>
-                <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
-                  <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Total Subscribers:</h3>
-                  <p className="text-3xl text-white font-semibold tracking-wide">{fetchedTotalSubscribers}</p>
-                </div>
-                <div className="text-left p-6 bg-[#1E2435]/80 rounded-xl border border-gray-800/30">
-                  <h3 className="text-gray-400/90 text-lg mb-3 font-medium">Agent Key:</h3>
-                  <p className="text-sm text-white font-mono break-all bg-[#232839]/80 p-3 rounded-lg border border-gray-800/30">{newAgentId}</p>
-                </div>
-              </div>
-
-              {/* Fetched Data Controls */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
-                <div className="flex items-center gap-4">
-                  <h3 className="text-2xl font-semibold text-white tracking-wide">{showFetchedSubscribers ? 'Subscribers' : 'Holders'}</h3>
+              )}
+                <div className="flex items-center gap-3">
+                  <div className="flex justify-center gap-3">
                   <button
                     onClick={() => {
-                      const items = fetchedAgentData.agentKey.users;
-                      const csv = `Wallet Address,Amount\n${items.map(item => 
-                        `${getId(item)},${formatNumber(getAmount(item)).replace(/,/g, '')}`
-                      ).join('\n')}`;
-                      const blob = new Blob([csv], { type: 'text/csv' });
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `${currentSymbol.toLowerCase()}-${showFetchedSubscribers ? 'subscribers' : 'holders'}-${newAgentId}.csv`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      window.URL.revokeObjectURL(url);
+                      if (fetchedAgentData) {
+                        setShowFetchedSubscribers(false);
+                        fetchAgentUsers({ variables: { agentKey: newAgentId } });
+                      } else {
+                        setShowSubscribers(false);
+                      }
                     }}
-                    className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl hover:from-green-500 hover:to-green-400 transition-all duration-200 shadow-lg font-medium border border-green-400/20"
-                  >
-                    Export CSV
-                  </button>
-                </div>
-                <div className="flex justify-center gap-8">
-                  <button
-                    onClick={() => {
-                      setShowFetchedSubscribers(false);
-                      fetchAgentUsers({ variables: { agentKey: newAgentId } });
-                    }}
-                    className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-                      !showFetchedSubscribers 
-                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
-                        : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435]/90 hover:scale-102 border border-gray-800/30'
+                    className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-200 shadow-lg ${
+                      (!fetchedAgentData && !showSubscribers) || (fetchedAgentData && !showFetchedSubscribers)
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white border border-blue-400/20' 
+                        : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435] border border-gray-800/30'
                     }`}
                   >
-                    View Holders
+                    Holders
                   </button>
                   <button
                     onClick={() => {
-                      setShowFetchedSubscribers(true);
-                      fetchSubscribers({ variables: { agentKey: newAgentId } });
+                      if (fetchedAgentData) {
+                        setShowFetchedSubscribers(true);
+                        fetchSubscribers({ variables: { agentKey: newAgentId } });
+                      } else {
+                        setShowSubscribers(true);
+                      }
                     }}
-                    className={`px-12 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-                      showFetchedSubscribers 
-                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white scale-105 transform border border-blue-400/20' 
-                        : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435]/90 hover:scale-102 border border-gray-800/30'
+                    className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-200 shadow-lg ${
+                      (!fetchedAgentData && showSubscribers) || (fetchedAgentData && showFetchedSubscribers)
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white border border-blue-400/20' 
+                        : 'bg-[#1E2435]/80 text-gray-300/90 hover:bg-[#1E2435] border border-gray-800/30'
                     }`}
                   >
-                    View Subscribers
+                    Subscribers
                   </button>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <div className="overflow-hidden rounded-xl border border-gray-800/30 min-w-[1200px]">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-left bg-[#1E2435]/80 border-b border-gray-800/30">
-                        <th className="py-6 px-8 text-gray-400/90 font-medium w-16">#</th>
-                        <th className="py-6 px-8 text-gray-400/90 font-medium">Wallet Address</th>
-                        <th className="py-6 px-8 text-gray-400/90 font-medium w-48">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-800/30">
-                      {fetchedAgentData.agentKey.users.map((item, index) => (
-                        <tr key={index} className="hover:bg-[#1E2435]/80 transition-colors duration-150">
-                          <td className="py-6 px-8 text-white">{index + 1}</td>
-                          <td className="py-6 px-8 text-xs font-mono text-white break-all">{getId(item)}</td>
-                          <td className="py-6 px-8 text-white font-medium">
-                            {formatNumber(getAmount(item))} {currentSymbol}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
               </div>
             </div>
-          )}
-        </>
-      )}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  if (fetchedAgentData) {
+                    const items = fetchedAgentData.agentKey.users;
+                    const csv = `Wallet Address,Amount\n${items.map(item => 
+                      `${getId(item)},${formatNumber(getAmount(item)).replace(/,/g, '')}`
+                    ).join('\n')}`;
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${currentSymbol.toLowerCase()}-${showFetchedSubscribers ? 'subscribers' : 'holders'}-${newAgentId}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                  } else {
+                    const items = showSubscribers ? subscribers : holders;
+                    const csv = `Wallet Address,Amount\n${items.map(item => 
+                      `${getId(item)},${formatNumber(getAmount(item)).replace(/,/g, '')}`
+                    ).join('\n')}`;
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${currentSymbol.toLowerCase()}-${showSubscribers ? 'subscribers' : 'holders'}-${agentKey}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                  }
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl hover:from-green-500 hover:to-green-400 transition-all duration-200 shadow-lg font-medium text-sm border border-green-400/20"
+              >
+                Export CSV
+              </button>
+              <button
+                onClick={() => fetchedAgentData ? setShowAllFetched(!showAllFetched) : setShowAll(!showAll)}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-500 hover:to-blue-400 transition-all duration-200 shadow-lg font-medium text-sm border border-blue-400/20"
+              >
+                {(fetchedAgentData ? showAllFetched : showAll) ? 'Show Less' : 'Show All'}
+              </button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <div className="overflow-hidden rounded-xl border border-gray-800/30 min-w-[1200px]">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left bg-[#1E2435]/80 border-b border-gray-800/30">
+                    <th className="py-6 px-8 text-gray-400/90 font-medium w-16">#</th>
+                    <th className="py-6 px-8 text-gray-400/90 font-medium">Wallet Address</th>
+                    <th className="py-6 px-8 text-gray-400/90 font-medium w-48">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800/30">
+                  {(fetchedAgentData ? 
+                    (showAllFetched ? fetchedAgentData.agentKey.users : fetchedAgentData.agentKey.users.slice(0, 10)) :
+                    (showAll ? 
+                      (showSubscribers ? subscribers : holders) : 
+                      (showSubscribers ? subscribers.slice(0, 10) : holders.slice(0, 10))
+                    )
+                  ).map((item, index) => (
+                    <tr key={index} className="hover:bg-[#1E2435]/80 transition-colors duration-150">
+                      <td className="py-6 px-8 text-white">{index + 1}</td>
+                      <td className="py-6 px-8 text-xs font-mono text-white break-all">{getId(item)}</td>
+                      <td className="py-6 px-8 text-white font-medium">
+                        {formatNumber(getAmount(item))} {currentSymbol}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

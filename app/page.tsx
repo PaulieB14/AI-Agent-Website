@@ -55,24 +55,11 @@ function WalletQueryComponent() {
   const [totalSubscribed, setTotalSubscribed] = useState<string>('0');
   const [totalSubscribers, setTotalSubscribers] = useState<string>('0');
 
-  const [checkSubscription] = useLazyQuery<SubscriptionData>(CHECK_SUBSCRIPTION_QUERY, {
-    client,
-    fetchPolicy: 'no-cache',
-    onCompleted: (data) => {
-      console.log('📊 Query completed:', JSON.stringify(data, null, 2));
-    },
-    onError: (error) => {
-      console.error('❌ Query error:', error);
-      setError(error.message);
-      setIsEligible(false);
-    },
-  });
-
   const [fetchHolders] = useLazyQuery<HoldersData>(HOLDERS_QUERY, {
     client,
     fetchPolicy: 'no-cache',
     onCompleted: (data) => {
-      const holders = data.agentKey.users.map(user => ({
+      const holders = data.agentKey.users.map((user: { id: string; balance: string }) => ({
         address: user.id,
         amount: user.balance
       }));
@@ -88,7 +75,7 @@ function WalletQueryComponent() {
     client,
     fetchPolicy: 'no-cache',
     onCompleted: (data) => {
-      const subscribers = data.agentKey.users.map(user => ({
+      const subscribers = data.agentKey.users.map((user: { id: string; totalSubscribed: string }) => ({
         address: user.id,
         amount: user.totalSubscribed
       }));
@@ -101,6 +88,38 @@ function WalletQueryComponent() {
       setError(error.message);
     },
   });
+
+  // Effect for fetching initial DNXS data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await Promise.all([
+          fetchHolders({ variables: { agentKey: AGENT_KEY } }),
+          fetchSubscribers({ variables: { agentKey: AGENT_KEY } })
+        ]);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+
+    if (AGENT_KEY) {
+      fetchData();
+    }
+  }, [fetchHolders, fetchSubscribers]);
+
+  const [checkSubscription] = useLazyQuery<SubscriptionData>(CHECK_SUBSCRIPTION_QUERY, {
+    client,
+    fetchPolicy: 'no-cache',
+    onCompleted: (data) => {
+      console.log('📊 Query completed:', JSON.stringify(data, null, 2));
+    },
+    onError: (error) => {
+      console.error('❌ Query error:', error);
+      setError(error.message);
+      setIsEligible(false);
+    },
+  });
+
 
   const formatGwei = (value: string | undefined): string => {
     if (!value) return '0.000';
@@ -173,23 +192,6 @@ function WalletQueryComponent() {
     }
   }, [isConnected, address]);
 
-  // Effect for fetching initial data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await Promise.all([
-          fetchHolders({ variables: { agentKey: AGENT_KEY } }),
-          fetchSubscribers({ variables: { agentKey: AGENT_KEY } })
-        ]);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-      }
-    };
-
-    if (AGENT_KEY) {
-      fetchData();
-    }
-  }, [fetchHolders, fetchSubscribers]);
 
   return (
     <ClientOnly>
@@ -198,9 +200,9 @@ function WalletQueryComponent() {
         <DataDisplay
           totalLocked={totalSubscribed}
           totalSubscribers={totalSubscribers}
-          agentKey={AGENT_KEY}
           holders={holdersData}
           subscribers={subscribersData}
+          agentKey={AGENT_KEY}
           isEligible={isEligible || false}
           subscriptionData={subscriptionData}
           isLoading={isLoading}
