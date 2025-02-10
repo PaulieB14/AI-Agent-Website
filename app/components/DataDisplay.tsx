@@ -192,7 +192,7 @@ export default function DataDisplay({
               Connected Address: {address}
             </div>
             <div className="mt-1 text-gray-300">
-              Subscription Amount: {subscriptionData ? formatNumber(subscriptionData) : 'N/A'} {currentSymbol}
+              Subscription Amount: {subscriptionData ? formatNumber(subscriptionData) : 'N/A'} 
             </div>
           </>
         )}
