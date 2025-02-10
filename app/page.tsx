@@ -35,7 +35,7 @@ interface SubscribersData {
   };
 }
 
-const REQUIRED_DNXS = BigInt('10000000000000000000000'); // 10,000 DNXS
+const REQUIRED_DNXS = BigInt('50000000000000000000000'); // 50,000 DNXS
 const AGENT_KEY = "0x4aaba1b66a9a3e3053343ec11beeec2d205904df";
 
 function ClientOnly({ children }: { children: React.ReactNode }) {
