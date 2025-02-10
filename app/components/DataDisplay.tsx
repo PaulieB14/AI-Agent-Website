@@ -186,7 +186,7 @@ export default function DataDisplay({
         {isConnected && (
           <>
             <div className={`text-xl font-bold ${isEligible ? 'text-green-500 animate-pulse' : 'text-red-500'}`}>
-              {isEligible ? 'Eligible - Scroll to bottom' : `Not Eligible - Need 10,000 ${currentSymbol}`}
+              {isEligible ? 'Wallet is Eligible' : `Not Eligible - Need 10,000 ${currentSymbol}`}
             </div>
             <div className="mt-2 text-gray-300">
               Connected Address: {address}
