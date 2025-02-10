@@ -7,7 +7,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import client from '../lib/apolloClient';
 import { CHECK_SUBSCRIPTION_QUERY } from '../lib/queries';
 
-const REQUIRED_DNXS = BigInt('10000000000000000000000'); // 10,000 DNXS
+const REQUIRED_DNXS = BigInt('50000000000000000000000'); // 50,000 DNXS
 
 export default function WalletQuery() {
   const { address, isConnected } = useAccount();
@@ -113,7 +113,7 @@ export default function WalletQuery() {
             Want to Export Your Own Project Data?
           </h3>
           <p className="text-gray-300 text-sm md:text-base">
-            Connect your wallet and check if you have enough DNXS subscribed (10,000 minimum)
+            Connect your wallet and check if you have enough DNXS subscribed (50,000 minimum)
           </p>
         </div>
 
@@ -144,7 +144,7 @@ export default function WalletQuery() {
                   {isEligible ? (
                     <p className="text-green-500">✓ Eligible to export data</p>
                   ) : (
-                    <p className="text-yellow-500">⚠️ Need 10,000 DNXS minimum</p>
+                    <p className="text-yellow-500">⚠️ Need 50,000 DNXS minimum</p>
                   )}
                 </div>
               )}

@@ -181,12 +181,12 @@ export default function DataDisplay({
       <div className="bg-[#1a1f2e]/80 p-10 rounded-2xl shadow-lg border border-gray-800/30 backdrop-blur-sm">
         <h3 className="text-2xl font-bold mb-4">Want to Export Your Own Project Data?</h3>
         <p className="text-gray-300/90 text-lg leading-relaxed mb-4">
-          Connect your wallet with 10,000 locked tokens to export CSV files of your project&apos;s holders and subscribers.
+          Connect your wallet with 50,000 locked tokens to export CSV files of your project&apos;s holders and subscribers.
         </p>
         {isConnected && (
           <>
             <div className={`text-xl font-bold ${isEligible ? 'text-green-500 animate-pulse' : 'text-red-500'}`}>
-              {isEligible ? 'Wallet is Eligible' : `Not Eligible - Need 10,000 ${currentSymbol}`}
+              {isEligible ? 'Wallet is Eligible' : `Not Eligible - Need 50,000 ${currentSymbol}`}
             </div>
             <div className="mt-2 text-gray-300">
               Connected Address: {address}
