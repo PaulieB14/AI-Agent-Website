@@ -35,6 +35,7 @@ interface SubscribersData {
   };
 }
 
+// Updated requirement to 50,000 DNXS tokens
 const REQUIRED_DNXS = BigInt('50000000000000000000000'); // 50,000 DNXS
 const AGENT_KEY = "0x4aaba1b66a9a3e3053343ec11beeec2d205904df";
 
