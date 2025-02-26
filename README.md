@@ -1,5 +1,20 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment Setup
+
+This project requires certain environment variables to be set up. Follow these steps:
+
+1. Copy `.env.example` to a new file named `.env`
+2. Fill in the required environment variables in `.env`:
+   - `NEXT_PUBLIC_WEB3MODAL_PROJECT_ID`: Your Web3Modal project ID
+   - `NEXT_PUBLIC_GRAPH_API_KEY`: Your Graph API key ([Watch setup video](https://www.youtube.com/watch?v=vVkhz6WTi5A))
+
+### The Graph API Resources
+- [Pricing Information](https://thegraph.com/studio-pricing/)
+- [Query Documentation](https://thegraph.com/docs/en/subgraphs/querying/introduction/)
+
+Note: Never commit your `.env` file or share your API keys publicly.
+
 ## Getting Started
 
 First, run the development server:
