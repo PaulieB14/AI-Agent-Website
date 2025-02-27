@@ -1,51 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Web3 Next.js Application 🚀
 
-## Environment Setup
+A modern web3-enabled Next.js application with Graph API integration, Web3Modal support, and RainbowKit integration.
 
-This project requires certain environment variables to be set up. Follow these steps:
+## ✨ Features
 
-1. Copy `.env.example` to a new file named `.env`
+- 🌐 Web3 Integration with Web3Modal and RainbowKit
+- 📊 Graph API Integration for blockchain data querying
+- 🎨 Styled with TailwindCSS
+- 🔍 Apollo Client for GraphQL queries
+- ⚡ Built with Next.js and TypeScript
+- 🎯 Font Awesome icons integration
+- 📱 Fully responsive design
+
+## 🛠 Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+- A Web3Modal Project ID
+- A Graph API Key
+
+## 🔑 Environment Setup
+
+This project requires environment variables to be set up. Follow these steps:
+
+1. Copy `.env.example` to a new file named `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
 2. Fill in the required environment variables in `.env`:
    - `NEXT_PUBLIC_WEB3MODAL_PROJECT_ID`: Your Web3Modal project ID
    - `NEXT_PUBLIC_GRAPH_API_KEY`: Your Graph API key ([Watch setup video](https://www.youtube.com/watch?v=vVkhz6WTi5A))
 
-### The Graph API Resources
+### 📚 The Graph API Resources
 - [Pricing Information](https://thegraph.com/studio-pricing/)
 - [Query Documentation](https://thegraph.com/docs/en/subgraphs/querying/introduction/)
 
-Note: Never commit your `.env` file or share your API keys publicly.
+> ⚠️ Note: Never commit your `.env` file or share your API keys publicly.
 
-## Getting Started
+## 🚀 Getting Started
 
-First, run the development server:
+1. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. Run the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📦 Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [Next.js](https://nextjs.org/) - React framework
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [TailwindCSS](https://tailwindcss.com/) - Styling
+- [Web3Modal](https://web3modal.com/) - Web3 integration
+- [RainbowKit](https://www.rainbowkit.com/) - Wallet connection
+- [Apollo Client](https://www.apollographql.com/docs/react/) - GraphQL client
+- [The Graph](https://thegraph.com/) - Blockchain data indexing
+- [Font Awesome](https://fontawesome.com/) - Icons
+- [Wagmi](https://wagmi.sh/) - Web3 React Hooks
 
-## Learn More
+## 🔧 Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `npm run dev` - Start development server with Turbopack
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📝 Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Deploy on Vercel
+## 📄 License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is open source and available under the MIT license.
