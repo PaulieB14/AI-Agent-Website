@@ -2,6 +2,8 @@
 
 A modern web3-enabled Next.js application with Graph API integration, Web3Modal support, and RainbowKit integration.
 
+Example website here - https://nexus-two-kappa.vercel.app/
+
 ## ✨ Features
 
 - 🌐 Web3 Integration with Web3Modal and RainbowKit
